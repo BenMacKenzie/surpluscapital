@@ -1,5 +1,5 @@
-def get_future_value(current_year, value, factor):
-    return value * (1 + factor) ** (current_year - parameters["start_year"])
+def get_future_value(start_year, future_year, value, factor):
+    return round(value * (1 + factor) ** (future_year - start_year),0)
 
 
 def createTransaction(transactions, type, account, amount, desc=""):
@@ -21,13 +21,9 @@ def get_capital(book):
     total += book["rrspSp"]
     total += book["rrif"]
     total += book["rrifSp"]
+    total += book['clearing']
+    total += book["home"]
     return total
-
-
-def print_list(list):
-    for l  in list:
-        print(l)
-
 
 
 def process_transactions(book, transactions):
@@ -40,17 +36,11 @@ def process_transactions(book, transactions):
     return book
 
 
-def amount_of_regular_asset_to_sell(book, client, need):
-    if client:
-        account = "regularAsset"
-        bookValue = "regularAssetBookValue"
-    else:
-        account = "regularAssetSp"
-        bookValue = "regularAssetSpBookValue"
 
-    a = (book[account]- book[bookValue])/book[account]
-    b = a * parameters["tax_rate"]
 
+def amount_of_regular_asset_to_sell(value, bookvalue, need, tax_rate):
+
+    a = (value - bookvalue)/ value
+    b = a * tax_rate * 0.5
     x = need / (1 - b)
-
-    return x
+    return round(x,0)
