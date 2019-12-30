@@ -190,8 +190,7 @@ def find_essential_capital(start_book):
         book = process_transactions(book, surplus_cap_transactions)
 
         end_capital, sim = create_projection(book, surplus_cap_transactions)
-        print(end_capital)
-        print(essential_capital)
+
         #close enough
         if abs(desired_end_balance - end_capital) < 1000:
             return sim, surplus_cap_transactions
@@ -208,82 +207,14 @@ def find_essential_capital(start_book):
             essential_capital = round((high + low) / 2,0)
 
 
-'''
+
 parameters = {
         "growth_rate": 0.05,
         "income_rate": 0,
         "inflation": 0.02,
         "start_year": 2019,
-        "age": 67,
-        "spouse_age": 67,
-        "end_year": 2043,
-        "end_balance": 2000000,
-        "tax_rate": 0.25,
-        "pensions": [
-        {"name": "client_cpp",
-         "amount": 16000,
-         "start_year": 2022,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "spouse_cpp",
-         "amount": 16000,
-         "start_year": 2022,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "client_oas",
-         "amount": 7200,
-         "start_year": 2019,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "spouse_oas",
-         "amount": 7200,
-         "start_year": 2019,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "client_pension",
-         "amount": 50000,
-         "start_year": 2019,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "spouse_pension",
-         "amount": 30000,
-         "start_year": 2019,
-         "end_year": 2043,
-         "index_rate": 0.02
-         }
-        ],
-
-        "income_requirements": 200000,
-        }
-
-
-start_book = {
-        "regularAsset": 1000000,
-        "regularAssetBookValue": 1000000,
-        "regularAssetSp": 1000000,
-        "regularAssetSpBookValue": 1000000,
-        "rrsp": 900000,
-        "rrspSp": 900000,
-        "tfsa": 100000,
-        "tfsaSp": 0,
-        "rrif": 0,
-        "rrifSp": 0,
-        "home" : 0,
-        "year": parameters["start_year"],
-        "clearing": 0
-}
-'''
-parameters = {
-        "growth_rate": 0.05,
-        "income_rate": 0,
-        "inflation": 0.02,
-        "start_year": 2019,
-        "age": 67,
+        "client_age": 67,
+        "spouse": False,
         "spouse_age": 0,
         "end_year": 2043,
         "end_balance": 30000,
@@ -353,8 +284,7 @@ print(json.dumps(sim2))
 
 
 
-#todo: round values, write files, use eums for transactions, report in constant dollars, fix rrif rules, some money is in limbow eg., sale of house, rrif wkthdrawal
-
+#todo: write files, use eums for transactions, report in constant dollars, fix rrif rules, some money is in limbo eg., sale of house, rrif wkthdrawal
 #tax based on next year...
 
 

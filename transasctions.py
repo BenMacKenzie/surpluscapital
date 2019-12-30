@@ -1,27 +1,23 @@
 from utils import *
 
 
+def rrsp_converstion_to_rrif(transactions, book, rrspAccount, rrifAccount):
 
-def rrsp_converstion_to_rrif(transactions, book, client):
-    if client:
-        rrspAccount = "rrspAccount"
-        rrifAccount = "rrifAccount"
-    else:
-        rrspAccount = "rrspAccountSp"
-        rrifAccount = "rrifAccountSp"
 
     createTransaction(transactions, "debit", rrspAccount, book[rrspAccount], "rrsp conversion")
     createTransaction(transactions, "credit", rrifAccount, book[rrspAccount], "rrsp conversion")
 
 
-#fix...
-def get_mandatory_rrif_withdrawals(transactions, book, year, age, spouse_age):
-    if (age + year > 65) and (book["rrif"] > 0):
-        createTransaction(transactions,"debit", "rrif", round(book["rrif"] / 20, 0), "mandatory rrif withdrawal")
-        createTransaction(transactions,"credit", "clearing", round(book["rrif"] / 20,0), "mandatory rrif withdrawal")
-    if (spouse_age + year > 65) and (book["rrifSp"] > 0):
-        createTransaction(transactions, "debit", "rrifSp", round(book["rrifSp"] / 20,0), "mandatory rrif withdrawal")
-        createTransaction(transactions, "credit", "clearing", round(book["rrifSp"] / 20,0), "mandatory rrif withdrawal")
+#use real rrif schedule
+def get_mandatory_rrif_withdrawals(transactions, book, age, account, tax_rate):
+
+    if book[account] > 0 and age >= 65:
+        amount = round(book[account] / (90 - age), 0)
+        createTransaction(transactions, "debit", "account", amount, "mandatory rrif withdrawal")
+        createTransaction(transactions, "credit", "clearing", amount, "mandatory rrif withdrawal")
+        createTransaction(transactions, "debit", "clearing", amount*tax_rate, "tax on rrif withdrawal")
+
+
 
 def sell_regular_asset(transactions, client, book, amount, tax_rate):
 
@@ -47,6 +43,7 @@ def sell_rrsp(transactions, account, amount, tax_rate):
     createTransaction(transactions, "debit", "clearing", round(amount * tax_rate,0), "tax on sale of rrsp")
 
 
+
 def sell_tfsa(transactions, account, amount):
     createTransaction(transactions, "debit", account, amount, "sell " + account)
     createTransaction(transactions, "credit", "clearing", amount)
@@ -61,26 +58,34 @@ def process_pensions(transactions, start_year, year, pensions, tax_rate):
 
 
 
-
-
 def generate_base_transactions(transactions, current_book, parameters):
 
     year = current_book["year"]
     createTransaction(transactions, "debit", "clearing", get_future_value(parameters["start_year"], year, parameters["income_requirements"], parameters["inflation"]), "living expense")
     process_pensions(transactions, parameters["start_year"], year, parameters["pensions"], parameters["tax_rate"])
 
+    if get_age(year, parameters['start_year'], parameters['client_age']) == 71:
+        rrsp_converstion_to_rrif(transactions, current_book, 'rrsp', 'rrif' )
 
-    #fix..no appreiciation in year of sale and no income earned...could credit regiular asset and process_transactions
+    if parameters["spouse"] and get_age(year, parameters['start_year'], parameters['spouse_age']) == 71:
+        rrsp_converstion_to_rrif(transactions, current_book, 'rrspSp', 'rrifSp')
+
     if "sell_home" in parameters.keys() and parameters["sell_home"] == year:
         createTransaction(transactions, "credit", "clearing", current_book["home"], "sell home")
         createTransaction(transactions, "debit", "home", current_book["home"], "sell home")
 
-    elif current_book["home"] > 0:
-            createTransaction(transactions, "credit", "home",
-                              round(current_book["home"] * parameters["inflation"], 0),
-                              "home appreciation")
 
-    get_mandatory_rrif_withdrawals(transactions, current_book, year, parameters["age"], parameters["spouse_age"])
+
+    #now let's roll this book forward:
+    current_book = process_transactions(current_book, transactions)
+
+    if current_book["home"] > 0:
+        createTransaction(transactions, "credit", "home", round(current_book["home"] * parameters["inflation"], 0), "home appreciation")
+
+    get_mandatory_rrif_withdrawals(transactions, current_book, get_age(year, parameters['start_year'], parameters['client_age']), 'rrif', parameters["tax_rate"])
+
+    if parameters["spouse"]:
+        get_mandatory_rrif_withdrawals(transactions, current_book, get_age(year, parameters['start_year'], parameters['spouse_age']), 'rrifSp', parameters["tax_rate"])
 
     for account in ["regularAsset", "regularAssetSp"]:
         if(current_book[account] > 0 and parameters["growth_rate"] > 0):
@@ -100,9 +105,6 @@ def generate_base_transactions(transactions, current_book, parameters):
             createTransaction(transactions, "credit", account, round(current_book[account] * parameters["growth_rate"],0), "growth")
         if (current_book[account] > 0 and parameters["income_rate"] > 0):
             createTransaction(transactions, "credit", account, round(current_book[account] * parameters["income_rate"],0), "interest and dividend")
-
-
-
 
 
 
@@ -150,6 +152,7 @@ def meet_cash_req_from_tfsa(transactions, book, account):
         sell_tfsa(transactions, account, needs)
     else:
         sell_tfsa(transactions, account, book[account])
+
 
 
 def invest_funds(transactions,book):

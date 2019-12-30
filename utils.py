@@ -39,8 +39,14 @@ def process_transactions(book, transactions):
 
 
 def amount_of_regular_asset_to_sell(value, bookvalue, need, tax_rate):
-
     a = (value - bookvalue)/ value
     b = a * tax_rate * 0.5
     x = need / (1 - b)
     return round(x,0)
+
+
+
+def get_age(start_age, start_year, current_year):
+    age = start_age + current_year - start_year
+    return age
+
