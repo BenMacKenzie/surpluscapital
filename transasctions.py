@@ -13,7 +13,7 @@ def get_mandatory_rrif_withdrawals(transactions, book, age, account, tax_rate):
 
     if book[account] > 0 and age >= 65:
         amount = round(book[account] / (90 - age), 0)
-        createTransaction(transactions, "debit", "account", amount, "mandatory rrif withdrawal")
+        createTransaction(transactions, "debit", account, amount, "mandatory rrif withdrawal")
         createTransaction(transactions, "credit", "clearing", amount, "mandatory rrif withdrawal")
         createTransaction(transactions, "debit", "clearing", amount*tax_rate, "tax on rrif withdrawal")
 

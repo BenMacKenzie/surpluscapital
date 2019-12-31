@@ -207,30 +207,64 @@ def find_essential_capital(start_book):
             essential_capital = round((high + low) / 2,0)
 
 
-
 parameters = {
         "growth_rate": 0.05,
-        "income_rate": 0,
+        "income_rate": 0.02,
         "inflation": 0.02,
         "start_year": 2019,
         "client_age": 67,
-        "spouse": False,
-        "spouse_age": 0,
+        "spouse": True,
+        "spouse_age": 63,
         "end_year": 2043,
-        "end_balance": 30000,
-        "tax_rate": 0.25,
-        "pensions": [
+        "end_balance": 1000000,
+        "tax_rate": 0.40,
+       "pensions": [
+        {"name": "client_cpp",
+         "amount": 16000,
+         "start_year": 2022,
+         "end_year": 2043,
+         "index_rate": 0.02
+         },
+        {"name": "spouse_cpp",
+         "amount": 16000,
+         "start_year": 2022,
+         "end_year": 2043,
+         "index_rate": 0.02
+         },
+        {"name": "client_oas",
+         "amount": 7200,
+         "start_year": 2019,
+         "end_year": 2043,
+         "index_rate": 0.02
+         },
+        {"name": "spouse_oas",
+         "amount": 7200,
+         "start_year": 2019,
+         "end_year": 2043,
+         "index_rate": 0.02
+         },
+        {"name": "client_pension",
+         "amount": 0,
+         "start_year": 2019,
+         "end_year": 2043,
+         "index_rate": 0.02
+         },
+        {"name": "spouse_pension",
+         "amount": 0,
+         "start_year": 2019,
+         "end_year": 2043,
+         "index_rate": 0.02
+         }
         ],
-        "income_requirements": 48000,
+        "income_requirements": 100000,
         }
-
 
 start_book = {
         "regularAsset": 1000000,
         "regularAssetBookValue": 1000000,
-        "regularAssetSp": 0,
-        "regularAssetSpBookValue": 0,
-        "rrsp": 0,
+        "regularAssetSp": 500000,
+        "regularAssetSpBookValue": 500000,
+        "rrsp": 500000,
         "rrspSp": 0,
         "tfsa": 0,
         "tfsaSp": 0,
