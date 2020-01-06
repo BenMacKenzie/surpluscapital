@@ -8,47 +8,47 @@ def simulate_one_year(start_book, year):
     generate_base_transactions(transactions, start_book, parameters)
     book = process_transactions(start_book, transactions)
 
-    if book["clearing"] > 0:
+    if book['joint'][Account.CLEARING] > 0:
         invest_funds(transactions, book)
 
     else:
         #client regular asset
-        meet_cash_req_from_regular_asset(transactions, book, True, parameters["tax_rate"])
+        meet_cash_req_from_regular_asset(transactions, book, "client", parameters["tax_rate"])
         book = process_transactions(start_book, transactions)
 
         #spouse regular asset
-        if book["clearing"] < 0:
-            meet_cash_req_from_regular_asset(transactions, book, False, parameters["tax_rate"])
+        if book['joint'][Account.CLEARING] < 0:
+            meet_cash_req_from_regular_asset(transactions, book, "spouse", parameters["tax_rate"])
             book = process_transactions(start_book, transactions)
 
         # client tfsa
-        if book["clearing"] < 0:
-            meet_cash_req_from_tfsa(transactions, book, "tfsa")
+        if book['joint'][Account.CLEARING] < 0:
+            meet_cash_req_from_tfsa(transactions, book, "client")
             book = process_transactions(start_book, transactions)
 
         #spouse tfsa
-        if book["clearing"] < 0:
-            meet_cash_req_from_tfsa(transactions, book, "tfsaSp")
+        if book['joint'][Account.CLEARING] < 0:
+            meet_cash_req_from_tfsa(transactions, book, "spouse")
             book = process_transactions(start_book, transactions)
 
         #client rrsp
-        if book["clearing"] < 0:
-            meet_cash_req_from_deferred(transactions, book, "rrsp", parameters["tax_rate"])
+        if book['joint'][Account.CLEARING] < 0:
+            meet_cash_req_from_deferred(transactions, book, "client", Account.RRSP, parameters["tax_rate"])
             book = process_transactions(start_book, transactions)
 
         #spouse rrsp
-        if book["clearing"] < 0:
-            meet_cash_req_from_deferred(transactions, book, "rrspSp", parameters["tax_rate"])
+        if book['joint'][Account.CLEARING] < 0:
+            meet_cash_req_from_deferred(transactions, book, "spouse", Account.RRSP, parameters["tax_rate"])
             book = process_transactions(start_book, transactions)
 
         # client rrif
-        if book["clearing"] < 0:
-            meet_cash_req_from_deferred(transactions, book, "rrif", parameters["tax_rate"])
+        if book['joint'][Account.CLEARING] < 0:
+            meet_cash_req_from_deferred(transactions, book, "client", Account.RRIF, ["tax_rate"])
             book = process_transactions(start_book, transactions)
 
         # spouse rrif
-        if book["clearing"] < 0:
-            meet_cash_req_from_deferred(transactions, book, "rrifSp", parameters["tax_rate"])
+        if book['joint'][Account.CLEARING] < 0:
+            meet_cash_req_from_deferred(transactions, book, "spouse", Account.RRIF, parameters["tax_rate"])
             _ = process_transactions(start_book, transactions)
 
 
@@ -96,75 +96,75 @@ def set_essential_capital(book, essential_capital):
     if delta <= 0:
         return transactions
 
-    if book["regularAsset"] > 0:
-        if book["regularAsset"] > delta:
-            createTransaction(transactions, "debit", "regularAsset", delta, "remove surplus capital")
-            createTransaction(transactions, "debit", "regularAssetBookValue", delta * book["regularAssetBookValue"]/ book["regularAsset"], "remove surplus capital book value")
+    if parameters['spouse']:
+        persons = ['client', 'spouse']
+    else:
+        persons = ['client']
+
+
+    for person in persons:
+        if book[person][Account.REGULAR] > delta:
+            createTransaction(transactions, "debit", person, Account.REGULAR, delta, Transaction.REMOVE_SURPLUS_CAPITAL)
+            createTransaction(transactions, "debit", person, Account.REGULAR_BOOK_VALUE, delta * book[person][Account.REGULAR_BOOK_VALUE]/ book[person][Account.REGULAR],
+                              Transaction.REMOVE_SURPLUS_CAPITAL)
             delta = 0
 
-        else:
-            createTransaction(transactions, "debit", "regularAsset", book["regularAsset"], "remove surplus capital")
-            createTransaction(transactions, "debit", "regularAssetBookValue", book["regularAssetBookValue"], "remove surplus capital book value")
+        elif book[person][Account.REGULAR] > 0:
+            createTransaction(transactions, "debit", person, Account.REGULAR, book[person][Account.REGULAR], Transaction.REMOVE_SURPLUS_CAPITAL)
+            createTransaction(transactions, "debit", person, Account.REGULAR_BOOK_VALUE, book[person][Account.REGULAR_BOOK_VALUE],Transaction.REMOVE_SURPLUS_CAPITAL)
+            delta -= book[person][Account.REGULAR]
 
-            delta -= book["regularAsset"]
+        if delta == 0:
+            return transactions
 
-    if delta == 0:
-        return transactions
 
-    if book["regularAssetSp"] > 0:
-        if book["regularAssetSp"] > delta:
-            createTransaction(transactions, "debit", "regularAssetSp", delta, "remove surplus capital")
-            createTransaction(transactions, "debit", "regularAssetSpBookValue", delta * book["regularAssetSpBookValue"] / book["regularAssetSp"], "remove surplus capital book value")
+    for person in persons:
 
+        if book[person][Account.TFSA] > delta:
+            createTransaction(transactions, "debit", person, Account.TFSA, delta, Transaction.REMOVE_SURPLUS_CAPITAL)
             delta = 0
-        else:
-            createTransaction(transactions, "debit", "regularAssetSp", book["regularAssetSp"], "remove surplus capital")
-            createTransaction(transactions, "debit", "regularAssetSpBookValue", book["regularAssetSpBookValue"], "remove surplus capital book value")
-            delta -= book["regularAssetSp"]
 
-    if delta == 0:
-        return transactions
+        elif book[person][Account.TFSA] > 0:
+            createTransaction(transactions, "debit", person, Account.TFSA, book[person][Account.TFSA],
+                              Transaction.REMOVE_SURPLUS_CAPITAL)
 
-    if book["tfsa"] > 0:
-        if book["tfsa"] > delta:
-            createTransaction(transactions, "debit", "tfsa", delta, "remove surplus capital")
+            delta -= book[person][Account.TFSA]
+
+        if delta == 0:
+            return transactions
+
+
+    for person in persons:
+
+        if book[person][Account.RRSP] > delta:
+            createTransaction(transactions, "debit", person, Account.RRSP, delta, Transaction.REMOVE_SURPLUS_CAPITAL)
             delta = 0
-        else:
-            createTransaction(transactions, "debit", "tfsa", book["tfsa"], "remove surplus capital")
-            delta -= book["tfsa"]
 
-    if delta == 0:
-        return transactions
+        elif book[person][Account.RRSP] > 0:
+            createTransaction(transactions, "debit", person, Account.RRSP, book[person][Account.RRSP],
+                              Transaction.REMOVE_SURPLUS_CAPITAL)
 
-    if book["tfsaSp"] > 0:
-        if book["tfsaSp"] > delta:
-            createTransaction(transactions, "debit", "tfsaSp", delta, "remove surplus capital")
+            delta -= book[person][Account.RRSP]
+
+        if delta == 0:
+            return transactions
+
+
+    for person in persons:
+
+        if book[person][Account.RRIF] > delta:
+            createTransaction(transactions, "debit", person, Account.RRIF, delta, Transaction.REMOVE_SURPLUS_CAPITAL)
             delta = 0
-        else:
-            createTransaction(transactions, "debit", "tfsaSp", book["tfsaSp"], "remove surplus capital")
-            delta -= book["tfsaSp"]
 
-    if delta == 0:
-        return transactions
+        elif book[person][Account.RRIF] > 0:
+            createTransaction(transactions, "debit", person, Account.RRIF, book[person][Account.RRIF],
+                              Transaction.REMOVE_SURPLUS_CAPITAL)
 
-    if book["rrsp"] > 0:
-        if book["rrsp"] > delta:
-            createTransaction(transactions, "debit", "rrsp", delta, "remove surplus capital")
-            delta = 0
-        else:
-            createTransaction(transactions, "debit", "rrsp", book["rrsp"], "remove surplus capital")
-            delta -= book["rrsp"]
+            delta -= book[person][Account.RRIF]
 
-    if delta == 0:
-        return transactions
+        if delta == 0:
+            return transactions
 
-    if book["rrspSp"] > 0:
-        if book["rrspSp"] > delta:
-            createTransaction(transactions, "debit", "rrspSp", delta, "remove surplus capital")
-            delta = 0
-        else:
-            createTransaction(transactions, "debit", "rrspSp", book["rrspSp"], "remove surplus capital")
-            delta -= book["rrspSp"]
 
     return transactions
 
@@ -184,12 +184,15 @@ def find_essential_capital(start_book):
         return sim, []
 
 
+
     while True:
         book = start_book
         surplus_cap_transactions = set_essential_capital(book, essential_capital)
         book = process_transactions(book, surplus_cap_transactions)
 
         end_capital, sim = create_projection(book, surplus_cap_transactions)
+
+        print(end_capital)
 
         #close enough
         if abs(desired_end_balance - end_capital) < 1000:
@@ -218,7 +221,7 @@ parameters = {
         "end_year": 2043,
         "end_balance": 1000000,
         "tax_rate": 0.40,
-       "pensions": [
+        "pensions": [
         {"name": "client_cpp",
          "amount": 16000,
          "start_year": 2022,
@@ -260,37 +263,49 @@ parameters = {
         }
 
 start_book = {
-        "regularAsset": 1000000,
-        "regularAssetBookValue": 1000000,
-        "regularAssetSp": 500000,
-        "regularAssetSpBookValue": 500000,
-        "rrsp": 500000,
-        "rrspSp": 0,
-        "tfsa": 0,
-        "tfsaSp": 0,
-        "rrif": 0,
-        "rrifSp": 0,
-        "home" : 0,
+        "joint" : {Account.CLEARING: 0,
+                   Account.HOME: 0},
+        "client" : {
+            Account.REGULAR: 1000000,
+            Account.REGULAR_BOOK_VALUE: 500000,
+            Account.TFSA: 1000000,
+            Account.RRSP: 0,
+            Account.RRIF: 0
+        },
+
+        "spouse": {
+            Account.REGULAR: 1000000,
+            Account.REGULAR_BOOK_VALUE: 500000,
+            Account.TFSA: 0,
+            Account.RRSP: 0,
+            Account.RRIF: 0
+        },
+
+
         "year": parameters["start_year"],
-        "clearing": 0
 }
 
-start_surplus_capital_book  = {
-        "regularAsset": 0,
-        "regularAssetBookValue": 0,
-        "regularAssetSp": 0,
-        "regularAssetSpBookValue": 0,
-        "rrsp": 0,
-        "rrspSp": 0,
-        "tfsa": 0,
-        "tfsaSp": 0,
-        "rrif": 0,
-        "rrifSp": 0,
-        "year": parameters["start_year"],
-        "home": 0,
-        "clearing": 0
-}
+start_surplus_capital_book = {
+    "joint": {Account.CLEARING: 0,
+              Account.HOME: 0},
+    "client": {
+        Account.REGULAR: 0,
+        Account.REGULAR_BOOK_VALUE: 0,
+        Account.TFSA: 0,
+        Account.RRSP: 0,
+        Account.RRIF: 0
+    },
 
+    "spouse": {
+        Account.REGULAR: 0,
+        Account.REGULAR_BOOK_VALUE: 0,
+        Account.TFSA: 0,
+        Account.RRSP: 0,
+        Account.RRIF: 0
+    },
+
+    "year": parameters["start_year"],
+}
 
 sim, sc = find_essential_capital(start_book)
 
@@ -299,7 +314,7 @@ sim, sc = find_essential_capital(start_book)
 # simulate how surplus capital will grow...actually..probabably no need to do this..
 # reverse transactions
 for t in sc:
-    t["type"] = "credit"
+    t["entry_type"] = "credit"
 
 #remove income requiremenrts and pensions
 parameters["income_requirements"] = 0
