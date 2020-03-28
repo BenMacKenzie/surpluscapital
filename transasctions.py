@@ -112,11 +112,6 @@ def amount_of_regular_asset_to_sell(value, bookvalue, need, tax_rate):
 
 
 
-
-
-
-
-
 def get_age(start_age, start_year, current_year):
     age = start_age + current_year - start_year
     return age
