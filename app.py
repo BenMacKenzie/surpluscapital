@@ -17,6 +17,7 @@ import dash_core_components as dcc
 #server = flask.Flask(__name__)
 #server.secret_key = os.environ.get('secret_key', str(randint(0, 1000000)))
 app = dash.Dash('Dash Hello World')
+server = app.server
 
 text_style = dict(color='#444', fontFamily='sans-serif', fontWeight=300)
 plotly_figure = dict(data=[dict(x=[1,2,3], y=[2,4,8])])
