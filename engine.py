@@ -1,6 +1,8 @@
 
 from transasctions import *
 import json
+import pandas as pd
+
 
 
 def simulate_one_year(start_book, year):
@@ -219,7 +221,7 @@ parameters = {
         "spouse": True,
         "spouse_age": 63,
         "end_year": 2043,
-        "end_balance": 1000000,
+        "end_balance": 100000,
         "tax_rate": 0.40,
         "pensions": [
         {"name": "client_cpp",
@@ -259,15 +261,15 @@ parameters = {
          "index_rate": 0.02
          }
         ],
-        "income_requirements": 100000,
+        "income_requirements": 140000,
         }
 
 start_book = {
         "joint" : {Account.CLEARING: 0,
                    Account.HOME: 0},
         "client" : {
-            Account.REGULAR: 1000000,
-            Account.REGULAR_BOOK_VALUE: 500000,
+            Account.REGULAR: 800000,
+            Account.REGULAR_BOOK_VALUE: 800000,
             Account.TFSA: 1000000,
             Account.RRSP: 0,
             Account.RRIF: 0
@@ -307,28 +309,53 @@ start_surplus_capital_book = {
     "year": parameters["start_year"],
 }
 
-sim, sc = find_essential_capital(start_book)
+
+
+def get_projection():
+
+    essential_capital_projection, sc_transactions = find_essential_capital(start_book)
+
+    # reverse transactions
+    for t in sc_transactions:
+        t["entry_type"] = "credit"
+
+    #remove income requiremenrts and pensions
+    parameters["income_requirements"] = 0
+    parameters["pensions"] = []
+
+
+    #project surplus capital.
+    surplus_book = process_transactions(start_surplus_capital_book, sc_transactions)
+    _, surplus_capital_projection = create_projection(surplus_book)
+
+    return sc_transactions, essential_capital_projection, surplus_capital_projection
 
 
 
-# simulate how surplus capital will grow...actually..probabably no need to do this..
-# reverse transactions
-for t in sc:
-    t["entry_type"] = "credit"
 
-#remove income requiremenrts and pensions
-parameters["income_requirements"] = 0
-parameters["pensions"] = []
+def get_essenetial_capital_projection():
+    sc, sim1, sim2 = get_projection()
+    a = []
+    #for book in sim1:
+    #    a.append([book["start"]["year"], get_capital(book["start"])])
+
+    #return pd.DataFrame(a, columns=["year", "capital"])
+
+    for i in range(len(sim1)):
+        a.append([sim1[i]["start"]["year"], get_capital(sim1[i]["start"]), get_capital(sim2[i]["start"])])
+
+    return pd.DataFrame(a, columns=["year", "essential", "surplus"])
 
 
-#project surplus capital.
-surplus_book = process_transactions(start_surplus_capital_book, sc)
-_, sim2= create_projection(surplus_book)
 
-print("surplus capital = " + str(get_capital(sim2[0]['end'])))
-print(json.dumps(sc))
-print(json.dumps(sim))
-print(json.dumps(sim2))
+if __name__ == "__main__":
+    sc, sim1, sim2 = get_projection()
+    print("surplus capital = " + str(get_capital(sim2[0]['end'])))
+    print(json.dumps(sc))
+    print(json.dumps(sim1))
+    print(json.dumps(sim2))
+
+
 
 
 
