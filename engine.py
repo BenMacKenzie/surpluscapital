@@ -333,13 +333,9 @@ def get_projection():
 
 
 
-def get_essenetial_capital_projection():
+def get_essential_capital_projection():
     sc, sim1, sim2 = get_projection()
     a = []
-    #for book in sim1:
-    #    a.append([book["start"]["year"], get_capital(book["start"])])
-
-    #return pd.DataFrame(a, columns=["year", "capital"])
 
     for i in range(len(sim1)):
         a.append([sim1[i]["start"]["year"], get_capital(sim1[i]["start"]), get_capital(sim2[i]["start"])])

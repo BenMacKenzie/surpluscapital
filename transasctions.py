@@ -98,7 +98,25 @@ def process_transactions(book, transactions):
 
 
 
-#fix to work with complex tax code
+def get_income(person, transactions):
+    income = 0
+    source = [Transaction.EARNED_INCOME, Transaction.PENSION_INCOME, Transaction.DIVIDEND_INCOME, Transaction.RRSP_WITHDRAWAL,
+              Transaction.RRIF_WITHDRAWAL]
+    for transaction in transactions:
+        if transaction["person"] == person:
+            if transaction["transaction_type"] in source and transaction["entry_type"]=="credit":
+               income += transaction["amount"]
+            if transaction["transaction_type"] == Transaction.SALE_OF_REGULAR_ASSET:
+                income += transaction["amount"] * 0.5
+            if transaction["transaction_type"] == Transaction.BOOK_VALUE_ADJUSTMENT:
+                income -= transaction["amount"] * 0.5
+
+    return income
+
+
+
+
+            #fix to work with complex tax code
 def amount_of_regular_asset_to_sell(value, bookvalue, need, tax_rate):
     a = (value - bookvalue)/ value
     b = a * tax_rate * 0.5
