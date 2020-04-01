@@ -100,8 +100,30 @@ START_SURPLUS_CAPITAL_BOOK = {
 
 }
 
-def get_projection(parameters=PARAMETERS, start_book=START_BOOK):
-    start_surplus_capital_book= START_SURPLUS_CAPITAL_BOOK
+def get_projection(data):
+
+    start_book= data["start_book"]
+    parameters = data["parameters"]
+    start_surplus_capital_book =  {
+        "joint": {Account.CLEARING: 0,
+                  Account.HOME: 0},
+        "client": {
+            Account.REGULAR: 0,
+            Account.REGULAR_BOOK_VALUE: 0,
+            Account.TFSA: 0,
+            Account.RRSP: 0,
+            Account.RRIF: 0
+        },
+
+        "spouse": {
+            Account.REGULAR: 0,
+            Account.REGULAR_BOOK_VALUE: 0,
+            Account.TFSA: 0,
+            Account.RRSP: 0,
+            Account.RRIF: 0
+        }
+    }
+
     start_surplus_capital_book['year'] = parameters["start_year"]
     start_book["year"]=parameters["start_year"]
 
