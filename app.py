@@ -48,20 +48,26 @@ START_BOOK = {
 
 app.layout = dhc.Div([
         dhc.H2('Surplus Capital', style=text_style),
-        dhc.P('Regular Asset Account Balance', style=text_style),
-        dcc.Input(id='Regular_Account_Balance', placeholder='0', value='100000'),
+        dhc.P([
+            "Regular Asset Account Balance:",  dcc.Input(id='Regular_Account_Balance',type='number', placeholder='0', value='100000')
+        ]),
+        dhc.P([
+            "End Balance: ", dcc.Input(id="end_balance",type='number', placeholder='0', value='0' )
+        ]),
+
+        dhc.Table([dhc.Tr([dhc.Td("hudfa"), dhc.Td("dfa")]), dhc.Tr([dhc.Td("hudfxxxxxa"), dhc.Td("dfa")])]),
         dhc.Button('Calculate', id='calculate_button'),
         dcc.Graph(id='plot1'),
+        dcc.Store(id="parameters", storage_type='session', data=START_BOOK)
     ])
 
 
 
 @app.callback(
-    Output("plot1", "figure"), [Input("calculate_button", "n_clicks")], state=[State("Regular_Account_Balance", "value")])
-def update_graph(n, end_balance):
-    start_book = START_BOOK
-    start_book["client"][Account.REGULAR] = int(end_balance)
-    _, _, _, data = get_projection(start_book=start_book)
+    Output("plot1", "figure"), [Input("calculate_button", "n_clicks")],  state=[State('parameters', 'data')])
+def update_graph(n, parameters):
+
+    _, _, _, data = get_projection(start_book=parameters)
 
     fig = go.Figure(data=[
         go.Bar(name='essential', x=data["year"], y=data["essential"]),
@@ -70,6 +76,11 @@ def update_graph(n, end_balance):
 
     return fig
 
+
+@app.callback(Output('parameters', 'data'), [Input('Regular_Account_Balance', 'value')], state=[State('parameters', 'data')])
+def update_account_balance(balance, params):
+    params["client"][Account.REGULAR] = int(balance)
+    return params
 
 
 
