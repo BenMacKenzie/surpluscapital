@@ -141,7 +141,7 @@ def get_age(start_age, start_year, current_year):
 def rrsp_converstion_to_rrif(transactions, book, person):
 
     createTransaction(transactions, "debit", person, Account.RRSP, book[person][Account.RRSP], Transaction.RRSP_CONVERSION, "rrsp conversion")
-    createTransaction(transactions, "credit", person, Account.RRIF, book[person][Account.RRIF], Transaction.RRSP_CONVERSION, "rrsp conversion")
+    createTransaction(transactions, "credit", person, Account.RRIF, book[person][Account.RRSP], Transaction.RRSP_CONVERSION, "rrsp conversion")
 
 
 
@@ -165,7 +165,7 @@ def sell_regular_asset(transactions, person, book, amount, tax_rate):
  #   createTransaction(transactions,"debit", "clearing", round((amount * (total - bookvalue) / total) * tax_rate * .5,0), "tax on sale of asset")
 
 
-def sell_deferred(transactions, person,  account, amount, tax_rate):
+def sell_deferred(transactions, person,  account, amount, tax_rate=0):
     if account == Account.RRSP:
         transaction=Transaction.RRSP_WITHDRAWAL
     elif account == Account.RRIF:
@@ -251,7 +251,7 @@ def generate_base_transactions(transactions, current_book, parameters):
           #  createTransaction(transactions,"debit", Account.CLEARING, round(current_book[person][Account.REGULAR] * parameters["income_rate"] * parameters["tax_rate"],0), "tax on dividends and interest")
 
     for person in ["client", "spouse"]:
-        for account in [Account.RRSP, Account.RRSP, Account.TFSA]:
+        for account in [Account.RRSP, Account.RRIF, Account.TFSA]:
             if (current_book[person][account] > 0 and parameters["growth_rate"] > 0):
                 createTransaction(transactions,"credit", person, account, round(current_book[person][account] * parameters["growth_rate"],0), Transaction.ASSET_GROWTH)
             if (current_book[person][account] > 0 and parameters["income_rate"] > 0):
@@ -260,7 +260,7 @@ def generate_base_transactions(transactions, current_book, parameters):
     #tax = calculate_tax(transactions, parameters['tax_rate'])
 
 
-def meet_cash_req_from_regular_asset(transactions, book, person, tax_rate):
+def meet_cash_req_from_regular_asset(transactions, book, person, tax_rate=0.4):
 
 
     needs = 0 - book['joint'][Account.CLEARING]
@@ -274,7 +274,7 @@ def meet_cash_req_from_regular_asset(transactions, book, person, tax_rate):
         sell_regular_asset(transactions, person, book, book[person][Account.REGULAR], tax_rate)
 
 
-def meet_cash_req_from_deferred(transactions, book, person, account, tax_rate):
+def meet_cash_req_from_deferred(transactions, book, person, account, tax_rate=0.4):
 
     needs = 0 - book['joint'][Account.CLEARING]
 
