@@ -51,7 +51,7 @@ data = {
          "index_rate": 0.02
          },
         {"name": "spouse_oas",
-         "amount": 72000,
+         "amount": 0,
          "start_year": 2019,
          "end_year": 2043,
          "index_rate": 0.02
@@ -69,7 +69,7 @@ data = {
          "index_rate": 0.02
          }
         ],
-        "income_requirements": 100000,
+        "income_requirements": 0,
         },
     "start_book":  {
         "joint" : {Account.CLEARING: 0,
@@ -101,16 +101,16 @@ data = {
 app.layout = dhc.Div([
         dhc.H2('Surplus Capital', style=text_style),
 
-      #  dhc.P([
-      #      "Regular Asset Account Balance:",  dcc.Input(id='Regular_Account_Balance',type='number', placeholder='0', value='100000')
-      #  ]),
-      #  dhc.P([
-      #      "End Balance: ", dcc.Input(id="end_balance",type='number', placeholder='0', value='0' )
-      #  ]),
 
         dhc.Table([
             dhc.Tr([dhc.Td(""), dhc.Td("client"), dhc.Td("spouse")]),
+            dhc.Tr([dhc.Td("Age: "),
+                    dhc.Td(dcc.Input(id='client_age', type='number', placeholder='0', value='65')),
+                    dhc.Td(dcc.Input(id='spouse_age', type='number', placeholder='0', value='65'))]),
+
             dhc.Tr([dhc.Td("Regular Asset: "), dhc.Td(dcc.Input(id='client_regular_account',type='number', placeholder='0', value='100000')), dhc.Td(dcc.Input(id='spouse_regular_account',type='number', placeholder='0', value='0'))]),
+            dhc.Tr([dhc.Td("Regular Asset Book Value: "), dhc.Td(dcc.Input(id='client_regular_account_bv', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_regular_account_bv', type='number', placeholder='0', value='0'))]),
+
             dhc.Tr([dhc.Td("TFSA: "), dhc.Td(dcc.Input(id='client_tfsa_account', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_tfsa_account', type='number', placeholder='0', value='0'))]),
             dhc.Tr([dhc.Td("RRSP: "), dhc.Td(dcc.Input(id='client_rrsp_account', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_rrsp_account', type='number', placeholder='0', value='0'))]),
 
@@ -118,7 +118,38 @@ app.layout = dhc.Div([
 
         dhc.Div(),
 
-        dhc.Table([dhc.Tr([dhc.Td("End Balance"), dhc.Td(dcc.Input(id="end_balance",type='number', placeholder='0', value='0' ))])]),
+        dhc.Table([
+            dhc.Tr([dhc.Td("End Year"),  dhc.Td(dcc.Input(id="end_year", type='number', placeholder='0', value='2040'))]),
+
+            dhc.Tr([dhc.Td("Income Requirements"), dhc.Td(dcc.Input(id="income_requirements", type='number', placeholder='0', value='100000'))]),
+            dhc.Tr([dhc.Td("End Balance"), dhc.Td(dcc.Input(id="end_balance",type='number', placeholder='0', value='0' ))]),
+            dhc.Tr([dhc.Td("Growth Rate"), dhc.Td(dcc.Dropdown('growth_rate',
+                                options=[{'label': '0', 'value': '0.0'},
+                                         {'label': '1%', 'value': '0.01'},
+                                         {'label': '2%', 'value': '0.02'},
+                                         {'label': '3%', 'value': '0.03'},
+                                         {'label': '4%', 'value': '0.04'},
+                                         {'label': '5%', 'value': '0.05'},
+                                         ], value='0.05'))]),
+            dhc.Tr([dhc.Td("Income Rate"), dhc.Td(dcc.Dropdown('income_rate',
+                                options=[{'label': '0', 'value': '0.0'},
+                                         {'label': '1%', 'value': '0.01'},
+                                         {'label': '2%', 'value': '0.02'},
+                                         {'label': '3%', 'value': '0.03'},
+                                         {'label': '4%', 'value': '0.04'},
+                                         {'label': '5%', 'value': '0.05'},
+                                        ], value='0.02'))]),
+
+            dhc.Tr([dhc.Td("Inflation Rate"), dhc.Td(dcc.Dropdown('inflation_rate',
+                                options=[{'label': '0', 'value': '0.0'},
+                                         {'label': '1%', 'value': '0.01'},
+                                         {'label': '2%', 'value': '0.02'},
+                                         {'label': '3%', 'value': '0.03'},
+                                         {'label': '4%', 'value': '0.04'},
+                                         {'label': '5%', 'value': '0.05'},
+                                        ], value='0.02'))]),
+
+        ]),
 
 
         dhc.Button('Calculate', id='calculate_button'),
@@ -129,7 +160,7 @@ app.layout = dhc.Div([
         dcc.Store(id="joint", storage_type='memory', data=data["start_book"]["joint"].copy()),
         dcc.Store(id="xxx", storage_type='memory', data=data["parameters"]),
 
-        #add multiple stores to make this easier?
+
     ])
 
 
@@ -156,11 +187,13 @@ def update_graph(n, xxx, client, spouse, joint):
 
 
 @app.callback(Output('client', 'data'), [Input('client_regular_account', 'value'),
+                                         Input('client_regular_account_bv', 'value'),
                                          Input('client_tfsa_account', 'value'),
                                          Input('client_rrsp_account', 'value')],
                                         state=[State('client', 'data')])
-def update_client_book(reg_account, tfsa, rrsp, data):
+def update_client_book(reg_account, reg_account_bv, tfsa, rrsp, data):
     data[Account.REGULAR] = int(reg_account)
+    data[Account.REGULAR_BOOK_VALUE] = int(reg_account_bv)
     data[Account.TFSA] = int(tfsa)
     data[Account.RRSP] = int(rrsp)
     return data
@@ -169,19 +202,38 @@ def update_client_book(reg_account, tfsa, rrsp, data):
 
 
 @app.callback(Output('spouse', 'data'), [Input('spouse_regular_account', 'value'),
+                                         Input('spouse_regular_account_bv', 'value'),
                                          Input('spouse_tfsa_account', 'value'),
                                          Input('spouse_rrsp_account', 'value')
                                          ],
                                         state=[State('spouse', 'data')])
-def update_spouse_book(reg_account, tfsa, rrsp, data):
+def update_spouse_book(reg_account, reg_account_bv, tfsa, rrsp, data):
     data[Account.REGULAR] = int(reg_account)
+    data[Account.REGULAR_BOOK_VALUE] = int(reg_account_bv)
     data[Account.TFSA] = int(tfsa)
     data[Account.RRSP] = int(rrsp)
     return data
 
-@app.callback(Output('xxx', 'data'), [Input('end_balance', 'value')], state=[State('xxx', 'data')])
-def update_end_balance(balance, data):
+@app.callback(Output('xxx', 'data'), [Input('end_balance', 'value'),
+                                      Input('growth_rate', 'value'),
+                                      Input('income_rate', 'value'),
+                                      Input('inflation_rate', 'value'),
+                                      Input('income_requirements', 'value'),
+                                      Input('client_age', 'value'),
+                                      Input('spouse_age', 'value'),
+                                      Input('end_year', 'value'),
+
+                                      ], state=[State('xxx', 'data')])
+def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income_requirements,
+                       client_age, spouse_age, end_year, data):
     data["end_balance"]= int(balance)
+    data["growth_rate"] = float(growth_rate)
+    data["income_rate"] = float(income_rate)
+    data["inflation"] = float(inflation_rate)
+    data["income_requirements"] = int(income_requirements)
+    data["client_age"]=int(client_age)
+    data["spouse_age"] = int(spouse_age)
+    data["end_year"]=int(end_year)
     return data
 
 

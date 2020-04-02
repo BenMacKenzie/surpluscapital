@@ -168,7 +168,7 @@ def get_projection(data):
 
             # client rrif
             if book['joint'][Account.CLEARING] < 0:
-                meet_cash_req_from_deferred(transactions, book, "client", Account.RRIF, ["tax_rate"])
+                meet_cash_req_from_deferred(transactions, book, "client", Account.RRIF, parameters["tax_rate"])
                 book = process_transactions(start_book, transactions)
 
             # spouse rrif

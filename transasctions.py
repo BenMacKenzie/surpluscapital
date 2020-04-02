@@ -89,10 +89,13 @@ def process_transactions(book, transactions):
         amount = transaction["amount"]
         type = transaction["entry_type"]
 
-        if type == "debit":
-            book[person][account] -= amount
-        else:
-            book[person][account] += amount
+        try:
+            if type == "debit":
+                book[person][account] -= amount
+            else:
+                book[person][account] += amount
+        except Exception as e:
+            print(transaction)
 
     return book
 
@@ -116,7 +119,7 @@ def get_income(person, transactions):
 
 
 
-            #fix to work with complex tax code
+#fix to work with complex tax code
 def amount_of_regular_asset_to_sell(value, bookvalue, need, tax_rate):
     a = (value - bookvalue)/ value
     b = a * tax_rate * 0.5
@@ -140,8 +143,8 @@ def get_age(start_age, start_year, current_year):
 
 def rrsp_converstion_to_rrif(transactions, book, person):
 
-    createTransaction(transactions, "debit", person, Account.RRSP, book[person][Account.RRSP], Transaction.RRSP_CONVERSION, "rrsp conversion")
-    createTransaction(transactions, "credit", person, Account.RRIF, book[person][Account.RRSP], Transaction.RRSP_CONVERSION, "rrsp conversion")
+    createTransaction(transactions, "debit", person, Account.RRSP, book[person][Account.RRSP], Transaction.RRSP_CONVERSION, desc="rrsp conversion")
+    createTransaction(transactions, "credit", person, Account.RRIF, book[person][Account.RRSP], Transaction.RRSP_CONVERSION, desc="rrsp conversion")
 
 
 
@@ -149,8 +152,8 @@ def get_mandatory_rrif_withdrawals(transactions, book, age, person, tax_rate):
 
     if book[person][Account.RRIF] > 0 and age >= 65:
         amount = round(book[person][Account.RRIF] / (90 - age), 0)
-        createTransaction(transactions, "debit", book[person][Account.RRIF], amount, Transaction.RRIF_WITHDRAWAL, "mandatory rrif withdrawal")
-        createTransaction(transactions, "credit", book["joint"][Account.CLEARING], amount, Transaction.RRIF_WITHDRAWAL, "mandatory rrif withdrawal")
+        createTransaction(transactions, "debit", person, Account.RRIF, amount, Transaction.RRIF_WITHDRAWAL, desc="mandatory rrif withdrawal")
+        createTransaction(transactions, "credit", "joint", Account.CLEARING, amount, Transaction.RRIF_WITHDRAWAL, desc="mandatory rrif withdrawal")
         #createTransaction(transactions, "debit", "clearing", amount*tax_rate, "tax on rrif withdrawal")
 
 
@@ -218,7 +221,7 @@ def _calculate_tax(taxable_income, tax_rates):
 def generate_base_transactions(transactions, current_book, parameters):
 
     year = current_book["year"]
-    createTransaction(transactions, "debit", "joint", Account.CLEARING, get_future_value(parameters["start_year"], year, parameters["income_requirements"], parameters["inflation"]), Transaction.NEEDS, "living expense")
+    createTransaction(transactions, "debit", "joint", Account.CLEARING, get_future_value(parameters["start_year"], year, parameters["income_requirements"], parameters["inflation"]), Transaction.NEEDS, desc="living expense")
     process_pensions(transactions, parameters["start_year"], year, parameters["pensions"], parameters["tax_rate"])
 
     if get_age(year, parameters['start_year'], parameters['client_age']) == 71:
