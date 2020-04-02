@@ -1,3 +1,27 @@
+
+
+def _calculate_tax(taxable_income, tax_rates):
+    #tax rates: {"marginal": [(15,000.0.1), (30,000,0.4)], "top": 0.5}
+    base = 0
+    tax = 0
+    for (level, rate) in tax_rates["marginal"]:
+        if taxable_income <= level:
+            tax += (taxable_income - base) * rate
+            return tax
+        else:
+            tax += (level - base) * rate
+
+    tax += (taxable_income - tax_rates["marginal"][-1][0]) * tax_rates["top"]
+
+    return tax
+
+def calculate_marginal_tax(base_income, marginal_income, tax_rates):
+    base = _calculate_tax(base_income, tax_rates)
+    total = _calculate_tax(base_income + marginal_income, tax_rates)
+    return total - base
+
+
+
 def amount_of_deferred_asset_to_sell(need, starting_income, tax_rates):
     # tax rates: {"marginal": [(15,000.0.1), (30,000,0.4)], "top": 0.5}
 
@@ -43,3 +67,5 @@ def amount_of_regular_asset_to_sell(need, book_value_ratio, starting_income, tax
     rate = tax_rates['top'] * 0.5 * book_value_ratio
     amount += need / (1 - rate)
     return amount
+
+

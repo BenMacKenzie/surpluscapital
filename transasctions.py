@@ -2,7 +2,9 @@
 from enum import Enum
 import copy
 
-class Transaction(str, Enum):
+from tax import amount_of_deferred_asset_to_sell, amount_of_regular_asset_to_sell, _calculate_tax, calculate_marginal_tax
+
+class TransactionType(str, Enum):
     EARNED_INCOME = "EARNED_INCOME",
     PENSION_INCOME = "PENSION_INCOME",
     DIVIDEND_INCOME = "DIVIDEND_INCOME",
@@ -45,8 +47,7 @@ def get_future_value(start_year, future_year, value, factor):
 
 
 def createTransaction(transactions, entry_type, person, account, amount, transaction_type, book_value=0, desc=""):
-    transactions.append(
-        {
+    transaction = {
             "entry_type"  : entry_type,
             "person": person,
             "account" : account,
@@ -56,7 +57,11 @@ def createTransaction(transactions, entry_type, person, account, amount, transac
             "desc": desc
 
         }
-    )
+
+    transactions.append(transaction)
+
+    return transaction
+
 
 def get_capital(book):
 
@@ -101,33 +106,23 @@ def process_transactions(book, transactions):
 
 
 
-def get_income(person, transactions):
-    income = 0
-    source = [Transaction.EARNED_INCOME, Transaction.PENSION_INCOME, Transaction.DIVIDEND_INCOME, Transaction.RRSP_WITHDRAWAL,
-              Transaction.RRIF_WITHDRAWAL]
+#use of clearning account will be a problem....can't distinguish between client and spouse income....
+#probably use the right person for transaction, but just put in logic to find the clearning account....
+
+
+def get_taxable_income(transactions, person):
+    taxable_income = 0
+    taxable = [TransactionType.SALE_OF_REGULAR_ASSET, TransactionType.RRIF_WITHDRAWAL, TransactionType.RRSP_WITHDRAWAL,
+               TransactionType.DIVIDEND_INCOME, TransactionType.PENSION_INCOME, TransactionType.EARNED_INCOME]
     for transaction in transactions:
         if transaction["person"] == person:
-            if transaction["transaction_type"] in source and transaction["entry_type"]=="credit":
-               income += transaction["amount"]
-            if transaction["transaction_type"] == Transaction.SALE_OF_REGULAR_ASSET:
-                income += transaction["amount"] * 0.5
-            if transaction["transaction_type"] == Transaction.BOOK_VALUE_ADJUSTMENT:
-                income -= transaction["amount"] * 0.5
+            if transaction["transaction_type"] in taxable:
+                if transaction["transaction_type"] == TransactionType.SALE_OF_REGULAR_ASSET:
+                    taxable_income += (transaction["amount"] - transaction["book_value"]) * 0.5
+                else:
+                    taxable_income += transaction["amount"]
 
-    return income
-
-
-
-
-#fix to work with complex tax code
-def amount_of_regular_asset_to_sell(value, bookvalue, need, tax_rate):
-    a = (value - bookvalue)/ value
-    b = a * tax_rate * 0.5
-    x = need / (1 - b)
-    return round(x,0)
-
-
-#def amont_of_regular_asset_to_sell2(value, bookvalue, need, starting_income, tax_rates):
+    return taxable_income
 
 
 
@@ -143,8 +138,8 @@ def get_age(start_age, start_year, current_year):
 
 def rrsp_converstion_to_rrif(transactions, book, person):
 
-    createTransaction(transactions, "debit", person, Account.RRSP, book[person][Account.RRSP], Transaction.RRSP_CONVERSION, desc="rrsp conversion")
-    createTransaction(transactions, "credit", person, Account.RRIF, book[person][Account.RRSP], Transaction.RRSP_CONVERSION, desc="rrsp conversion")
+    createTransaction(transactions, "debit", person, Account.RRSP, book[person][Account.RRSP], TransactionType.RRSP_CONVERSION, desc="rrsp conversion")
+    createTransaction(transactions, "credit", person, Account.RRIF, book[person][Account.RRSP], TransactionType.RRSP_CONVERSION, desc="rrsp conversion")
 
 
 
@@ -152,27 +147,31 @@ def get_mandatory_rrif_withdrawals(transactions, book, age, person, tax_rate):
 
     if book[person][Account.RRIF] > 0 and age >= 65:
         amount = round(book[person][Account.RRIF] / (90 - age), 0)
-        createTransaction(transactions, "debit", person, Account.RRIF, amount, Transaction.RRIF_WITHDRAWAL, desc="mandatory rrif withdrawal")
-        createTransaction(transactions, "credit", "joint", Account.CLEARING, amount, Transaction.RRIF_WITHDRAWAL, desc="mandatory rrif withdrawal")
+        createTransaction(transactions, "debit", person, Account.RRIF, amount, TransactionType.RRIF_WITHDRAWAL, desc="mandatory rrif withdrawal")
+        createTransaction(transactions, "credit", "joint", Account.CLEARING, amount, TransactionType.RRIF_WITHDRAWAL, desc="mandatory rrif withdrawal")
         #createTransaction(transactions, "debit", "clearing", amount*tax_rate, "tax on rrif withdrawal")
 
 
 
 def sell_regular_asset(transactions, person, book, amount, tax_rate):
-
+    income = get_taxable_income(transactions, person)
     total = book[person][Account.REGULAR]
     bookvalue =book[person][Account.REGULAR_BOOK_VALUE]
-    createTransaction(transactions,"debit", person, Account.REGULAR, amount, Transaction.SALE_OF_REGULAR_ASSET, book_value=round((amount / total) * bookvalue,0), desc="sell asset")
-    createTransaction(transactions,"debit", person, Account.REGULAR_BOOK_VALUE, round((amount / total) * bookvalue,0), Transaction.BOOK_VALUE_ADJUSTMENT)
-    createTransaction(transactions,"credit", "joint", Account.CLEARING, amount, Transaction.SALE_OF_REGULAR_ASSET)
- #   createTransaction(transactions,"debit", "clearing", round((amount * (total - bookvalue) / total) * tax_rate * .5,0), "tax on sale of asset")
+    createTransaction(transactions,"debit", person, Account.REGULAR, amount, TransactionType.SALE_OF_REGULAR_ASSET, book_value=round((amount / total) * bookvalue, 0), desc="sell asset")
+    createTransaction(transactions,"debit", person, Account.REGULAR_BOOK_VALUE, round((amount / total) * bookvalue,0), TransactionType.BOOK_VALUE_ADJUSTMENT)
+    createTransaction(transactions,"credit", "joint", Account.CLEARING, amount, TransactionType.SALE_OF_REGULAR_ASSET)
 
+    realized_cap_gain = amount * (total - bookvalue) / total
+    tax = calculate_marginal_tax(income, realized_cap_gain, tax_rate)
+    createTransaction(transactions,"debit", "joint", Account.CLEARING, tax, TransactionType.TAX, desc="tax on sale of asset")
+
+    print(f"income = {income},  sale = {amount}, tax={tax}")
 
 def sell_deferred(transactions, person,  account, amount, tax_rate=0):
     if account == Account.RRSP:
-        transaction=Transaction.RRSP_WITHDRAWAL
+        transaction=TransactionType.RRSP_WITHDRAWAL
     elif account == Account.RRIF:
-        transaction = Transaction.RRIF_WITHDRAWAL
+        transaction = TransactionType.RRIF_WITHDRAWAL
     else:
         return
 
@@ -182,38 +181,22 @@ def sell_deferred(transactions, person,  account, amount, tax_rate=0):
 
 
 def sell_tfsa(transactions, person, amount):
-    createTransaction(transactions, "debit", person, Account.TFSA, amount, Transaction.TFSA_WITHDRAWAL)
-    createTransaction(transactions, "credit", "joint", Account.CLEARING, amount, Transaction.TFSA_WITHDRAWAL)
+    createTransaction(transactions, "debit", person, Account.TFSA, amount, TransactionType.TFSA_WITHDRAWAL)
+    createTransaction(transactions, "credit", "joint", Account.CLEARING, amount, TransactionType.TFSA_WITHDRAWAL)
 
 
 def process_pensions(transactions, start_year, year, pensions, tax_rate):
     for pension in pensions:
         if pension["start_year"] <= year and pension["end_year"] >= year:
             pension_amount= get_future_value(start_year, year, pension["amount"], pension["index_rate"])
-            createTransaction(transactions, "credit", "joint",Account.CLEARING,pension_amount, Transaction.PENSION_INCOME)
+            createTransaction(transactions, "credit", "joint", Account.CLEARING, pension_amount, TransactionType.PENSION_INCOME)
             #createTransaction(transactions, "debit", "joint", "clearing", round(pension_amount * tax_rate, 0), "tax on " + pension["name"])
 
-def _calculate_tax(taxable_income, tax_rates):
-    #tax rates: {"marginal": [(15,000.0.1), (30,000,0.4)], "top": 0.5}
-    base = 0
-    tax = 0
-    for (level, rate) in tax_rates["marginal"]:
-        if taxable_income <= level:
-            tax += (taxable_income - base) * rate
-            return tax
-        else:
-            tax += (level - base) * rate
 
-    tax += (taxable_income - ["marginal"][-1][0]) * tax_rates["top"]
-
+def calculate_tax(transactions, person, tax_rates):
+    taxable_income=get_taxable_income(transactions, person)
+    tax = _calculate_tax(taxable_income, tax_rates)
     return tax
-
-
-
-
-#def calculate_tax(transactions, tax_rate):
-
-
 
 
 
@@ -221,7 +204,7 @@ def _calculate_tax(taxable_income, tax_rates):
 def generate_base_transactions(transactions, current_book, parameters):
 
     year = current_book["year"]
-    createTransaction(transactions, "debit", "joint", Account.CLEARING, get_future_value(parameters["start_year"], year, parameters["income_requirements"], parameters["inflation"]), Transaction.NEEDS, desc="living expense")
+    createTransaction(transactions, "debit", "joint", Account.CLEARING, get_future_value(parameters["start_year"], year, parameters["income_requirements"], parameters["inflation"]), TransactionType.NEEDS, desc="living expense")
     process_pensions(transactions, parameters["start_year"], year, parameters["pensions"], parameters["tax_rate"])
 
     if get_age(year, parameters['start_year'], parameters['client_age']) == 71:
@@ -231,14 +214,14 @@ def generate_base_transactions(transactions, current_book, parameters):
         rrsp_converstion_to_rrif(transactions, current_book, 'spouse')
 
     if "sell_home" in parameters.keys() and parameters["sell_home"] == year:
-        createTransaction(transactions, "credit", "joint", Account.CLEARING, current_book["joint"][Account.HOME],Transaction.SALE_OF_HOME)
-        createTransaction(transactions, "debit", "joint",  Account.HOME, current_book["joint"][Account.HOME],Transaction.SALE_OF_HOME)
+        createTransaction(transactions, "credit", "joint", Account.CLEARING, current_book["joint"][Account.HOME], TransactionType.SALE_OF_HOME)
+        createTransaction(transactions, "debit", "joint", Account.HOME, current_book["joint"][Account.HOME], TransactionType.SALE_OF_HOME)
 
 
     current_book = process_transactions(current_book, transactions)
 
     if current_book["joint"][Account.HOME] > 0:
-        createTransaction(transactions, "credit", "joint", Account.HOME, round(current_book["joing"][Account.HOME] * parameters["inflation"], 0), Transaction.HOME_APPRECIATION)
+        createTransaction(transactions, "credit", "joint", Account.HOME, round(current_book["joing"][Account.HOME] * parameters["inflation"], 0), TransactionType.HOME_APPRECIATION)
 
     get_mandatory_rrif_withdrawals(transactions, current_book, get_age(year, parameters['start_year'], parameters['client_age']), 'client', parameters["tax_rate"])
 
@@ -248,29 +231,33 @@ def generate_base_transactions(transactions, current_book, parameters):
     #can consolidate with below...since tax will be done elsewhere...
     for person in ["client", "spouse"]:
         if(current_book[person][Account.REGULAR] > 0 and parameters["growth_rate"] > 0):
-            createTransaction(transactions,"credit", person, Account.REGULAR, round(current_book[person][Account.REGULAR] * parameters["growth_rate"],0), Transaction.ASSET_GROWTH)
+            createTransaction(transactions,"credit", person, Account.REGULAR, round(current_book[person][Account.REGULAR] * parameters["growth_rate"],0), TransactionType.ASSET_GROWTH)
         if (current_book[person][Account.REGULAR] > 0 and parameters["income_rate"] > 0):
-            createTransaction(transactions,"credit",'joint', Account.CLEARING, round(current_book[person][Account.REGULAR] * parameters["income_rate"],0),Transaction.DIVIDEND_INCOME)
+            createTransaction(transactions,"credit",'joint', Account.CLEARING, round(current_book[person][Account.REGULAR] * parameters["income_rate"],0), TransactionType.DIVIDEND_INCOME)
           #  createTransaction(transactions,"debit", Account.CLEARING, round(current_book[person][Account.REGULAR] * parameters["income_rate"] * parameters["tax_rate"],0), "tax on dividends and interest")
 
     for person in ["client", "spouse"]:
         for account in [Account.RRSP, Account.RRIF, Account.TFSA]:
             if (current_book[person][account] > 0 and parameters["growth_rate"] > 0):
-                createTransaction(transactions,"credit", person, account, round(current_book[person][account] * parameters["growth_rate"],0), Transaction.ASSET_GROWTH)
+                createTransaction(transactions,"credit", person, account, round(current_book[person][account] * parameters["growth_rate"],0), TransactionType.ASSET_GROWTH)
             if (current_book[person][account] > 0 and parameters["income_rate"] > 0):
-                createTransaction(transactions,"credit", person, account, round(current_book[person][account] * parameters["income_rate"],0), Transaction.DIVIDEND_INCOME)
+                createTransaction(transactions,"credit", person, account, round(current_book[person][account] * parameters["income_rate"],0), TransactionType.DIVIDEND_INCOME)
 
-    #tax = calculate_tax(transactions, parameters['tax_rate'])
-
+    client_tax = calculate_tax(transactions,  "client", {"marginal": [(15000., 0.1), (30000, 0.4)], "top": 0.5})
+    createTransaction(transactions, "debit", "joint", Account.CLEARING, client_tax, TransactionType.TAX, desc="client tax before sale of assets")
+    spouse_tax = calculate_tax(transactions, "client", {"marginal": [(15000., 0.1), (30000, 0.4)], "top": 0.5})
+    createTransaction(transactions, "debit", "joint", Account.CLEARING, spouse_tax, TransactionType.TAX, desc="spouse tax before sale of assets")
 
 def meet_cash_req_from_regular_asset(transactions, book, person, tax_rate=0.4):
 
-
+    tax_rate={"marginal": [(15000., 0.1), (30000, 0.4)], "top": 0.5}
+    taxable_income = get_taxable_income(transactions, person)
     needs = 0 - book['joint'][Account.CLEARING]
     if book[person][Account.REGULAR] <= 0:
         return
+    book_value_ratio =  (book[person][Account.REGULAR] - book[person][Account.REGULAR_BOOK_VALUE]) / book[person][Account.REGULAR]
 
-    regular_asset_needed = amount_of_regular_asset_to_sell(book[person][Account.REGULAR], book[person][Account.REGULAR_BOOK_VALUE], needs, tax_rate)
+    regular_asset_needed = amount_of_regular_asset_to_sell(needs, book_value_ratio, taxable_income, tax_rate)
     if regular_asset_needed <= book[person][Account.REGULAR]:
         sell_regular_asset(transactions, person, book, regular_asset_needed, tax_rate)
     else:
@@ -307,6 +294,6 @@ def meet_cash_req_from_tfsa(transactions, book, person):
 
 
 def invest_funds(transactions,book):
-    createTransaction(transactions, "credit", "client",  Account.REGULAR,  book["joint"][Account.CLEARING], Transaction.REGULAR_ASSET_INVESTMENT)
-    createTransaction(transactions, "debit", "joint", Account.CLEARING,  book["joint"][Account.CLEARING], Transaction.REGULAR_ASSET_INVESTMENT)
+    createTransaction(transactions, "credit", "client", Account.REGULAR, book["joint"][Account.CLEARING], TransactionType.REGULAR_ASSET_INVESTMENT)
+    createTransaction(transactions, "debit", "joint", Account.CLEARING, book["joint"][Account.CLEARING], TransactionType.REGULAR_ASSET_INVESTMENT)
 

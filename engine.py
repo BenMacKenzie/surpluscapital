@@ -225,14 +225,14 @@ def get_projection(data):
 
         for person in persons:
             if book[person][Account.REGULAR] > delta:
-                createTransaction(transactions, "debit", person, Account.REGULAR, delta, Transaction.REMOVE_SURPLUS_CAPITAL)
-                createTransaction(transactions, "debit", person, Account.REGULAR_BOOK_VALUE, delta * book[person][Account.REGULAR_BOOK_VALUE]/ book[person][Account.REGULAR],
-                                  Transaction.REMOVE_SURPLUS_CAPITAL)
+                createTransaction(transactions, "debit", person, Account.REGULAR, delta, TransactionType.REMOVE_SURPLUS_CAPITAL)
+                createTransaction(transactions, "debit", person, Account.REGULAR_BOOK_VALUE, delta * book[person][Account.REGULAR_BOOK_VALUE] / book[person][Account.REGULAR],
+                                  TransactionType.REMOVE_SURPLUS_CAPITAL)
                 delta = 0
 
             elif book[person][Account.REGULAR] > 0:
-                createTransaction(transactions, "debit", person, Account.REGULAR, book[person][Account.REGULAR], Transaction.REMOVE_SURPLUS_CAPITAL)
-                createTransaction(transactions, "debit", person, Account.REGULAR_BOOK_VALUE, book[person][Account.REGULAR_BOOK_VALUE],Transaction.REMOVE_SURPLUS_CAPITAL)
+                createTransaction(transactions, "debit", person, Account.REGULAR, book[person][Account.REGULAR], TransactionType.REMOVE_SURPLUS_CAPITAL)
+                createTransaction(transactions, "debit", person, Account.REGULAR_BOOK_VALUE, book[person][Account.REGULAR_BOOK_VALUE], TransactionType.REMOVE_SURPLUS_CAPITAL)
                 delta -= book[person][Account.REGULAR]
 
             if delta == 0:
@@ -242,12 +242,12 @@ def get_projection(data):
         for person in persons:
 
             if book[person][Account.TFSA] > delta:
-                createTransaction(transactions, "debit", person, Account.TFSA, delta, Transaction.REMOVE_SURPLUS_CAPITAL)
+                createTransaction(transactions, "debit", person, Account.TFSA, delta, TransactionType.REMOVE_SURPLUS_CAPITAL)
                 delta = 0
 
             elif book[person][Account.TFSA] > 0:
                 createTransaction(transactions, "debit", person, Account.TFSA, book[person][Account.TFSA],
-                                  Transaction.REMOVE_SURPLUS_CAPITAL)
+                                  TransactionType.REMOVE_SURPLUS_CAPITAL)
 
                 delta -= book[person][Account.TFSA]
 
@@ -258,12 +258,12 @@ def get_projection(data):
         for person in persons:
 
             if book[person][Account.RRSP] > delta:
-                createTransaction(transactions, "debit", person, Account.RRSP, delta, Transaction.REMOVE_SURPLUS_CAPITAL)
+                createTransaction(transactions, "debit", person, Account.RRSP, delta, TransactionType.REMOVE_SURPLUS_CAPITAL)
                 delta = 0
 
             elif book[person][Account.RRSP] > 0:
                 createTransaction(transactions, "debit", person, Account.RRSP, book[person][Account.RRSP],
-                                  Transaction.REMOVE_SURPLUS_CAPITAL)
+                                  TransactionType.REMOVE_SURPLUS_CAPITAL)
 
                 delta -= book[person][Account.RRSP]
 
@@ -274,12 +274,12 @@ def get_projection(data):
         for person in persons:
 
             if book[person][Account.RRIF] > delta:
-                createTransaction(transactions, "debit", person, Account.RRIF, delta, Transaction.REMOVE_SURPLUS_CAPITAL)
+                createTransaction(transactions, "debit", person, Account.RRIF, delta, TransactionType.REMOVE_SURPLUS_CAPITAL)
                 delta = 0
 
             elif book[person][Account.RRIF] > 0:
                 createTransaction(transactions, "debit", person, Account.RRIF, book[person][Account.RRIF],
-                                  Transaction.REMOVE_SURPLUS_CAPITAL)
+                                  TransactionType.REMOVE_SURPLUS_CAPITAL)
 
                 delta -= book[person][Account.RRIF]
 
