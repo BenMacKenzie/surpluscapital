@@ -30,44 +30,9 @@ data = {
         "spouse_age": 63,
         "end_year": 2044,
         "end_balance": 100000,
-        "tax_rate": 0.40,
+        "tax_rate":  {"marginal": [(15000., 0.1), (30000, 0.4)], "top": 0.5},
         "pensions": [
-        {"name": "client_cpp",
-         "amount": 0,
-         "start_year": 2022,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "spouse_cpp",
-         "amount": 0,
-         "start_year": 2022,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "client_oas",
-         "amount": 0,
-         "start_year": 2019,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "spouse_oas",
-         "amount": 0,
-         "start_year": 2019,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "client_pension",
-         "amount": 0,
-         "start_year": 2019,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "spouse_pension",
-         "amount": 0,
-         "start_year": 2019,
-         "end_year": 2043,
-         "index_rate": 0.02
-         }
+
         ],
         "income_requirements": 0,
         },
@@ -112,11 +77,30 @@ app.layout = dhc.Div([
             dhc.Tr([dhc.Td("Regular Asset Book Value: "), dhc.Td(dcc.Input(id='client_regular_account_bv', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_regular_account_bv', type='number', placeholder='0', value='0'))]),
 
             dhc.Tr([dhc.Td("TFSA: "), dhc.Td(dcc.Input(id='client_tfsa_account', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_tfsa_account', type='number', placeholder='0', value='0'))]),
+            dhc.Tr([dhc.Td("RRIF: "), dhc.Td(dcc.Input(id='client_rrif_account', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_rrif_account', type='number', placeholder='0', value='0'))]),
+
             dhc.Tr([dhc.Td("RRSP: "), dhc.Td(dcc.Input(id='client_rrsp_account', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_rrsp_account', type='number', placeholder='0', value='0'))]),
 
         ]),
 
-        dhc.Div(),
+    dhc.Table([
+        dhc.Tr([dhc.Td("pension name"), dhc.Td("amount"), dhc.Td("start year"), dhc.Td("end year"), dhc.Td("index")]),
+        dhc.Tr([dhc.Td("client pension: "),
+                dhc.Td(dcc.Input(id='client_pension_amount', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='client_pension_start_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='client_pension_end_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='client_pension_index', type='number', placeholder='0', value='0'))]),
+
+        dhc.Tr([dhc.Td("spouse pension: "),
+            dhc.Td(dcc.Input(id='spouse_pension_amount', type='number', placeholder='0', value='0')),
+            dhc.Td(dcc.Input(id='spouse_pension_start_year', type='number', placeholder='0', value='0')),
+            dhc.Td(dcc.Input(id='spouse_pension_end_year', type='number', placeholder='0', value='0')),
+            dhc.Td(dcc.Input(id='spouse_pension_index', type='number', placeholder='0', value='0'))])
+
+    ]),
+
+
+    dhc.Div(),
 
         dhc.Table([
             dhc.Tr([dhc.Td("End Year"),  dhc.Td(dcc.Input(id="end_year", type='number', placeholder='0', value='2040'))]),
@@ -189,13 +173,16 @@ def update_graph(n, xxx, client, spouse, joint):
 @app.callback(Output('client', 'data'), [Input('client_regular_account', 'value'),
                                          Input('client_regular_account_bv', 'value'),
                                          Input('client_tfsa_account', 'value'),
+                                         Input('client_rrif_account', 'value'),
                                          Input('client_rrsp_account', 'value')],
+
                                         state=[State('client', 'data')])
-def update_client_book(reg_account, reg_account_bv, tfsa, rrsp, data):
+def update_client_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, data):
     data[Account.REGULAR] = int(reg_account)
     data[Account.REGULAR_BOOK_VALUE] = int(reg_account_bv)
     data[Account.TFSA] = int(tfsa)
     data[Account.RRSP] = int(rrsp)
+    data[Account.RRIF] = int(rrif)
     return data
 
 
@@ -204,13 +191,15 @@ def update_client_book(reg_account, reg_account_bv, tfsa, rrsp, data):
 @app.callback(Output('spouse', 'data'), [Input('spouse_regular_account', 'value'),
                                          Input('spouse_regular_account_bv', 'value'),
                                          Input('spouse_tfsa_account', 'value'),
+                                         Input('spouse_rrif_account', 'value'),
                                          Input('spouse_rrsp_account', 'value')
                                          ],
                                         state=[State('spouse', 'data')])
-def update_spouse_book(reg_account, reg_account_bv, tfsa, rrsp, data):
+def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, data):
     data[Account.REGULAR] = int(reg_account)
     data[Account.REGULAR_BOOK_VALUE] = int(reg_account_bv)
     data[Account.TFSA] = int(tfsa)
+    data[Account.RRIF] = int(rrif)
     data[Account.RRSP] = int(rrsp)
     return data
 
@@ -222,10 +211,21 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrsp, data):
                                       Input('client_age', 'value'),
                                       Input('spouse_age', 'value'),
                                       Input('end_year', 'value'),
+                                      Input('client_pension_amount', 'value'),
+                                      Input('client_pension_start_year', 'value'),
+                                      Input('client_pension_end_year', 'value'),
+                                      Input('client_pension_index', 'value'),
+                                      Input('spouse_pension_amount', 'value'),
+                                      Input('spouse_pension_start_year', 'value'),
+                                      Input('spouse_pension_end_year', 'value'),
+                                      Input('spouse_pension_index', 'value')
 
                                       ], state=[State('xxx', 'data')])
 def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income_requirements,
-                       client_age, spouse_age, end_year, data):
+                       client_age, spouse_age, end_year,
+                       client_pension_amount, client_pension_start, client_pension_end, client_pension_index,
+                       spouse_pension_amount, spouse_pension_start, spouse_pension_end, spouse_pension_index,
+                       data):
     data["end_balance"]= int(balance)
     data["growth_rate"] = float(growth_rate)
     data["income_rate"] = float(income_rate)
@@ -234,6 +234,29 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
     data["client_age"]=int(client_age)
     data["spouse_age"] = int(spouse_age)
     data["end_year"]=int(end_year)
+
+    data["pensions"] = []
+
+    if client_pension_amount != '0':
+        client_pension = {}
+        client_pension["name"] = "client_pension"
+        client_pension["person"] = "client"
+        client_pension["amount"] = int(client_pension_amount)
+        client_pension["start_year"] = int(client_pension_start)
+        client_pension["end_year"] = int(client_pension_end)
+        client_pension["index_rate"] = float(client_pension_index)
+        data["pensions"].append(client_pension)
+
+    if spouse_pension_amount != '0':
+        spouse_pension = {}
+        spouse_pension["name"] = "spouse_pension"
+        client_pension["person"] = "spouse"
+        spouse_pension["amount"] = int(spouse_pension_amount)
+        spouse_pension["start_year"] = int(spouse_pension_start)
+        spouse_pension["end_year"] = int(spouse_pension_end)
+        spouse_pension["index_rate"] = float(spouse_pension_index)
+        data["pensions"].append(spouse_pension)
+
     return data
 
 

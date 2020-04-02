@@ -15,39 +15,45 @@ PARAMETERS = {
         "spouse_age": 63,
         "end_year": 2044,
         "end_balance": 100000,
-        "tax_rate": 0.40,
+        "tax_rate": {"marginal": [(15000., 0.1), (30000, 0.4)], "top": 0.5},
         "pensions": [
         {"name": "client_cpp",
+         "person": "client",
          "amount": 16000,
          "start_year": 2022,
          "end_year": 2043,
          "index_rate": 0.02
          },
         {"name": "spouse_cpp",
+         "person": "spouse",
          "amount": 16000,
          "start_year": 2022,
          "end_year": 2043,
          "index_rate": 0.02
          },
         {"name": "client_oas",
+         "person": "client",
          "amount": 7200,
          "start_year": 2019,
          "end_year": 2043,
          "index_rate": 0.02
          },
         {"name": "spouse_oas",
+         "person": "spouse",
          "amount": 7200,
          "start_year": 2019,
          "end_year": 2043,
          "index_rate": 0.02
          },
         {"name": "client_pension",
+         "person": "client",
          "amount": 0,
          "start_year": 2019,
          "end_year": 2043,
          "index_rate": 0.02
          },
         {"name": "spouse_pension",
+         "person": "spouse",
          "amount": 0,
          "start_year": 2019,
          "end_year": 2043,
@@ -133,11 +139,14 @@ def get_projection(data):
         generate_base_transactions(transactions, start_book, parameters)
         book = process_transactions(start_book, transactions)
 
+        print(book['joint'][Account.CLEARING])
+
         if book['joint'][Account.CLEARING] > 0:
             invest_funds(transactions, book)
 
         else:
             #client regular asset
+
             meet_cash_req_from_regular_asset(transactions, book, "client", parameters["tax_rate"])
             book = process_transactions(start_book, transactions)
 
