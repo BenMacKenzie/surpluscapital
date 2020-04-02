@@ -89,13 +89,27 @@ app.layout = dhc.Div([
                 dhc.Td(dcc.Input(id='client_pension_amount', type='number', placeholder='0', value='0')),
                 dhc.Td(dcc.Input(id='client_pension_start_year', type='number', placeholder='0', value='0')),
                 dhc.Td(dcc.Input(id='client_pension_end_year', type='number', placeholder='0', value='0')),
-                dhc.Td(dcc.Input(id='client_pension_index', type='number', placeholder='0', value='0'))]),
+                dhc.Td(dcc.Dropdown('client_pension_index',
+                                    options=[{'label': '0', 'value': '0.0'},
+                                             {'label': '1%', 'value': '0.01'},
+                                             {'label': '2%', 'value': '0.02'},
+                                             {'label': '3%', 'value': '0.03'},
+                                             {'label': '4%', 'value': '0.04'},
+                                             {'label': '5%', 'value': '0.05'},
+                                             ], value='0.02'))]),
 
         dhc.Tr([dhc.Td("spouse pension: "),
             dhc.Td(dcc.Input(id='spouse_pension_amount', type='number', placeholder='0', value='0')),
             dhc.Td(dcc.Input(id='spouse_pension_start_year', type='number', placeholder='0', value='0')),
             dhc.Td(dcc.Input(id='spouse_pension_end_year', type='number', placeholder='0', value='0')),
-            dhc.Td(dcc.Input(id='spouse_pension_index', type='number', placeholder='0', value='0'))])
+                dhc.Td(dcc.Dropdown('spouse_pension_index',
+                                    options=[{'label': '0', 'value': '0.0'},
+                                             {'label': '1%', 'value': '0.01'},
+                                             {'label': '2%', 'value': '0.02'},
+                                             {'label': '3%', 'value': '0.03'},
+                                             {'label': '4%', 'value': '0.04'},
+                                             {'label': '5%', 'value': '0.05'},
+                                             ], value='0.02'))]),
 
     ]),
 
@@ -250,7 +264,7 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
     if spouse_pension_amount != '0':
         spouse_pension = {}
         spouse_pension["name"] = "spouse_pension"
-        client_pension["person"] = "spouse"
+        spouse_pension["person"] = "spouse"
         spouse_pension["amount"] = int(spouse_pension_amount)
         spouse_pension["start_year"] = int(spouse_pension_start)
         spouse_pension["end_year"] = int(spouse_pension_end)

@@ -195,6 +195,7 @@ def sell_tfsa(transactions, person, amount):
 def process_pensions(transactions, start_year, year, pensions, tax_rate):
     for pension in pensions:
         if pension["start_year"] <= year and pension["end_year"] >= year:
+            print(pension)
             pension_amount= get_future_value(start_year, year, pension["amount"], pension["index_rate"])
             createTransaction(transactions, "credit", pension["person"], Account.CLEARING, pension_amount, TransactionType.PENSION_INCOME)
 
@@ -228,23 +229,16 @@ def generate_base_transactions(transactions, current_book, parameters):
     current_book = process_transactions(current_book, transactions)
 
     if current_book["joint"][Account.HOME] > 0:
-        createTransaction(transactions, "credit", "joint", Account.HOME, round(current_book["joing"][Account.HOME] * parameters["inflation"], 0), TransactionType.HOME_APPRECIATION)
+        createTransaction(transactions, "credit", "joint", Account.HOME, round(current_book["joint"][Account.HOME] * parameters["inflation"], 0), TransactionType.HOME_APPRECIATION)
 
     get_mandatory_rrif_withdrawals(transactions, current_book, get_age(year, parameters['start_year'], parameters['client_age']), 'client', parameters["tax_rate"])
 
     if parameters["spouse"]:
         get_mandatory_rrif_withdrawals(transactions, current_book, get_age(year, parameters['start_year'], parameters['spouse_age']), 'spouse', parameters["tax_rate"])
 
-    #can consolidate with below...since tax will be done elsewhere...
-    for person in ["client", "spouse"]:
-        if(current_book[person][Account.REGULAR] > 0 and parameters["growth_rate"] > 0):
-            createTransaction(transactions,"credit", person, Account.REGULAR, round(current_book[person][Account.REGULAR] * parameters["growth_rate"],0), TransactionType.ASSET_GROWTH)
-        if (current_book[person][Account.REGULAR] > 0 and parameters["income_rate"] > 0):
-            createTransaction(transactions,"credit",person, Account.CLEARING, round(current_book[person][Account.REGULAR] * parameters["income_rate"],0), TransactionType.DIVIDEND_INCOME)
-          #  createTransaction(transactions,"debit", Account.CLEARING, round(current_book[person][Account.REGULAR] * parameters["income_rate"] * parameters["tax_rate"],0), "tax on dividends and interest")
 
     for person in ["client", "spouse"]:
-        for account in [Account.RRSP, Account.RRIF, Account.TFSA]:
+        for account in [Account.REGULAR, Account.RRSP, Account.RRIF, Account.TFSA]:
             if (current_book[person][account] > 0 and parameters["growth_rate"] > 0):
                 createTransaction(transactions,"credit", person, account, round(current_book[person][account] * parameters["growth_rate"],0), TransactionType.ASSET_GROWTH)
             if (current_book[person][account] > 0 and parameters["income_rate"] > 0):
@@ -252,7 +246,7 @@ def generate_base_transactions(transactions, current_book, parameters):
 
     client_tax = calculate_tax(transactions,  "client", tax_rate)
     createTransaction(transactions, "debit", person, Account.CLEARING, client_tax, TransactionType.TAX, desc="client tax before sale of assets")
-    spouse_tax = calculate_tax(transactions, "client", tax_rate)
+    spouse_tax = calculate_tax(transactions, "spouse", tax_rate)
     createTransaction(transactions, "debit", person, Account.CLEARING, spouse_tax, TransactionType.TAX, desc="spouse tax before sale of assets")
 
 def meet_cash_req_from_regular_asset(transactions, book, person, tax_rate):
