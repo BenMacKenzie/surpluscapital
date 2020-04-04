@@ -248,9 +248,9 @@ def generate_base_transactions(transactions, current_book, parameters):
                 createTransaction(transactions,"credit", person, account, round(current_book[person][account] * parameters["income_rate"],0), TransactionType.DIVIDEND_INCOME)
 
     client_tax = calculate_tax(transactions,  "client", tax_rate)
-    createTransaction(transactions, "debit", person, Account.CLEARING, client_tax, TransactionType.TAX, desc="client tax before sale of assets")
+    createTransaction(transactions, "debit", "client", Account.CLEARING, client_tax, TransactionType.TAX, desc="client tax before sale of assets")
     spouse_tax = calculate_tax(transactions, "spouse", tax_rate)
-    createTransaction(transactions, "debit", person, Account.CLEARING, spouse_tax, TransactionType.TAX, desc="spouse tax before sale of assets")
+    createTransaction(transactions, "debit", "spouse", Account.CLEARING, spouse_tax, TransactionType.TAX, desc="spouse tax before sale of assets")
 
 def meet_cash_req_from_regular_asset(transactions, book, person, tax_rate):
 
