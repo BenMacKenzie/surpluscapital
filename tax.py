@@ -10,6 +10,7 @@ def _calculate_tax(taxable_income, tax_rates):
             return tax
         else:
             tax += (level - base) * rate
+            base = level
 
     tax += (taxable_income - tax_rates["marginal"][-1][0]) * tax_rates["top"]
 
