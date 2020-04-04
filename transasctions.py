@@ -122,6 +122,10 @@ def get_taxable_income(transactions, person):
             if transaction["transaction_type"] in taxable:
                 if transaction["transaction_type"] == TransactionType.SALE_OF_REGULAR_ASSET:
                     taxable_income += (transaction["amount"] - transaction["book_value"]) * 0.5
+                if transaction["transaction_type"] == TransactionType.DIVIDEND_INCOME:
+                    if transaction['account'] == Account.REGULAR:
+                        taxable_income += transaction["amount"]
+
                 else:
                     taxable_income += transaction["amount"]
 
