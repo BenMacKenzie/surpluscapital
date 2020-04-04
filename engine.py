@@ -355,9 +355,12 @@ def get_projection(data):
 
     a = []
 
-    for i in range(len(essential_capital_projection)):
+    for i in range(len(essential_capital_projection) - 1):
         a.append([essential_capital_projection[i]["start"]["year"], get_capital(essential_capital_projection[i]["start"]), get_capital(surplus_capital_projection[i]["start"])])
 
+    #report end of year for last year in projection...
+    a.append([essential_capital_projection[-1]["end"]["year"], get_capital(essential_capital_projection[-1]["end"]),
+              get_capital(surplus_capital_projection[-1]["end"])])
 
     return sc_transactions, essential_capital_projection, surplus_capital_projection, pd.DataFrame(a, columns=["year", "essential", "surplus"])
 

@@ -6,6 +6,8 @@ import dash_html_components as dhc
 import dash_core_components as dcc
 import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State
+import dash_table
+
 from transasctions import *
 
 from engine import get_projection
@@ -160,7 +162,30 @@ app.layout = dhc.Div([
         dcc.Store(id="xxx", storage_type='memory', data=data["parameters"]),
 
 
-        dcc.Textarea(id='projection_text', style={'width': '100%', 'height': 500})
+
+
+        dash_table.DataTable(id='client_p_table', columns=[{"name": "year", "id": "year"},
+                                                    {"name": "regular asset", "id": "NON_REGISTERED_ASSET"},
+                                                    {"name": "book value", "id": "REGULAR_BOOK_VALUE"},
+                                                    {"name": "rrsp", "id": "RRSP"},
+                                                    {"name": "rrif", "id": "RRIF"},
+                                                    {"name": "tfsa", "id": "TFSA"},
+
+
+                                        ]),
+
+        dhc.Div("Spouse"),
+
+        dash_table.DataTable(id='spouse_p_table', columns=[{"name": "year", "id": "year"},
+                                                       {"name": "regular asset", "id": "NON_REGISTERED_ASSET"},
+                                                       {"name": "book value", "id": "REGULAR_BOOK_VALUE"},
+                                                       {"name": "rrsp", "id": "RRSP"},
+                                                       {"name": "rrif", "id": "RRIF"},
+                                                       {"name": "tfsa", "id": "TFSA"},
+
+                                                       ]),
+
+    dcc.Textarea(id='projection_text', style={'width': '100%', 'height': 500})
 
 
     ])
@@ -168,7 +193,7 @@ app.layout = dhc.Div([
 
 
 @app.callback(
-    [Output("plot1", "figure"), Output("projection_text", "value")], [Input("calculate_button", "n_clicks")],  state=[State('xxx', 'data'), State('client', 'data'), State('spouse', 'data'), State('joint', 'data')])
+    [Output("plot1", "figure"), Output("projection_text", "value"), Output("client_p_table", "data"), Output("spouse_p_table", "data")], [Input("calculate_button", "n_clicks")],  state=[State('xxx', 'data'), State('client', 'data'), State('spouse', 'data'), State('joint', 'data')])
 def update_graph(n, xxx, client, spouse, joint):
 
     d = {}
@@ -190,7 +215,18 @@ def update_graph(n, xxx, client, spouse, joint):
         text += str(rec["start"]) + "\n"
 
 
-    return (fig, text)
+    client_proj = [record['start']['client'] for record in essential_capital_projection[:-1]]
+    client_proj.append(essential_capital_projection[-1]['end']['spouse'])
+
+    spouse_proj = [record['start']['spouse'] for record in essential_capital_projection[:-1]]
+    spouse_proj.append(essential_capital_projection[-1]['end']['spouse'])
+
+    for i in range(len(essential_capital_projection)):
+        client_proj[i]["year"] = essential_capital_projection[i]["start"]["year"]
+        spouse_proj[i]["year"] =  essential_capital_projection[i]["start"]["year"]
+
+
+    return (fig, text, client_proj, spouse_proj)
 
 
 
