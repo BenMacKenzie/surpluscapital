@@ -185,7 +185,16 @@ app.layout = dhc.Div([
 
                                                        ]),
 
-    dcc.Textarea(id='projection_text', style={'width': '100%', 'height': 500})
+
+        dash_table.DataTable(id='transaction_detail', columns=[{"name": "year", "id": "year"},
+                                                               {"name": "person", "id": "person"},
+                                                               {"name": "entry_type", "id": "entry_type"},
+                                                               {"name": "account", "id": "account"},
+                                                               {"name": "amount", "id": "amount"},
+                                                               {"name": "transaction_type", "id": "transaction_type"},
+                                                               {"name": "desc", "id": "desc"}
+                                            ]),
+
 
 
     ])
@@ -193,7 +202,7 @@ app.layout = dhc.Div([
 
 
 @app.callback(
-    [Output("plot1", "figure"), Output("projection_text", "value"), Output("client_p_table", "data"), Output("spouse_p_table", "data")], [Input("calculate_button", "n_clicks")],  state=[State('xxx', 'data'), State('client', 'data'), State('spouse', 'data'), State('joint', 'data')])
+    [Output("plot1", "figure"), Output("client_p_table", "data"), Output("spouse_p_table", "data"), Output("transaction_detail", "data")], [Input("calculate_button", "n_clicks")],  state=[State('xxx', 'data'), State('client', 'data'), State('spouse', 'data'), State('joint', 'data')])
 def update_graph(n, xxx, client, spouse, joint):
 
     d = {}
@@ -210,9 +219,7 @@ def update_graph(n, xxx, client, spouse, joint):
         go.Bar(name='surplus', x=projection["year"], y=projection["surplus"])
     ])
 
-    text = ""
-    for rec in essential_capital_projection:
-        text += str(rec["start"]) + "\n"
+
 
 
     client_proj = [record['start']['client'] for record in essential_capital_projection[:-1]]
@@ -221,12 +228,19 @@ def update_graph(n, xxx, client, spouse, joint):
     spouse_proj = [record['start']['spouse'] for record in essential_capital_projection[:-1]]
     spouse_proj.append(essential_capital_projection[-1]['end']['spouse'])
 
+    transactions=[]
+
     for i in range(len(essential_capital_projection)):
         client_proj[i]["year"] = essential_capital_projection[i]["start"]["year"]
         spouse_proj[i]["year"] =  essential_capital_projection[i]["start"]["year"]
+        for t in essential_capital_projection[i]["start"]["transactions"]:
+            t["year"] = essential_capital_projection[i]["start"]["year"]
+            transactions.append(t)
 
 
-    return (fig, text, client_proj, spouse_proj)
+
+
+    return (fig, client_proj, spouse_proj, transactions)
 
 
 
