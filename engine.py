@@ -199,6 +199,8 @@ def get_projection(data):
 
         if sc:
             book["transactions"] = sc
+        else:
+            book["transactions"] = []
 
         for i in range(parameters["start_year"], parameters["end_year"]+1):
             d = {}
@@ -210,7 +212,7 @@ def get_projection(data):
             #this become starting book for next year..just as reference
             book = book.copy()
             book['year'] += 1
-            book.pop('transactions')
+            #book.pop('transactions')
 
 
 
@@ -310,6 +312,7 @@ def get_projection(data):
             return sim, []
 
 
+        print(f"essential capital {essential_capital}")
 
         while True:
             book = start_book
@@ -318,10 +321,9 @@ def get_projection(data):
 
             end_capital, sim = create_projection(book, surplus_cap_transactions)
 
-            print(end_capital)
 
             #close enough
-            if abs(desired_end_balance - end_capital) < 1000:
+            if abs(desired_end_balance - end_capital) / essential_capital  < 0.005:
                 return sim, surplus_cap_transactions
 
             #there is no essential capital..all surplus

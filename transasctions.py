@@ -168,7 +168,7 @@ def sell_regular_asset(transactions, person, book, amount, tax_rate):
     tax = calculate_marginal_tax(income, realized_cap_gain, tax_rate)
     createTransaction(transactions,"debit", person, Account.CLEARING, tax, TransactionType.TAX, desc="tax on sale of asset")
 
-    print(f"income = {income},  sale = {amount}, tax={tax}")
+
 
 def sell_deferred(transactions, person,  account, amount, tax_rate):
     income = get_taxable_income(transactions, person)
@@ -184,7 +184,6 @@ def sell_deferred(transactions, person,  account, amount, tax_rate):
     tax = calculate_marginal_tax(income, amount, tax_rate)
     createTransaction(transactions, "debit", person, Account.CLEARING, tax, TransactionType.TAX, desc="tax on sale of rrsp")
 
-    print(f"income = {income},  sale = {amount}, tax={tax}")
 
 
 def sell_tfsa(transactions, person, amount):
@@ -195,7 +194,7 @@ def sell_tfsa(transactions, person, amount):
 def process_pensions(transactions, start_year, year, pensions, tax_rate):
     for pension in pensions:
         if pension["start_year"] <= year and pension["end_year"] >= year:
-            print(pension)
+
             pension_amount= get_future_value(start_year, year, pension["amount"], pension["index_rate"])
             createTransaction(transactions, "credit", pension["person"], Account.CLEARING, pension_amount, TransactionType.PENSION_INCOME)
 

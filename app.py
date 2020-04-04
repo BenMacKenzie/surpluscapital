@@ -30,7 +30,8 @@ data = {
         "spouse_age": 63,
         "end_year": 2044,
         "end_balance": 100000,
-        "tax_rate":  {"marginal": [(15000., 0.1), (30000, 0.4)], "top": 0.5},
+       # "tax_rate":  {"marginal": [(15000., 0.1), (30000, 0.4)], "top": 0.5},
+        "tax_rate":  {"marginal": [(12070, 0.0), (50000, 0.25), (90000, 0.35), (200000, 0.45)], "top": 0.54},
         "pensions": [
 
         ],
@@ -159,12 +160,15 @@ app.layout = dhc.Div([
         dcc.Store(id="xxx", storage_type='memory', data=data["parameters"]),
 
 
+        dcc.Textarea(id='projection_text', style={'width': '100%', 'height': 500})
+
+
     ])
 
 
 
 @app.callback(
-    Output("plot1", "figure"), [Input("calculate_button", "n_clicks")],  state=[State('xxx', 'data'), State('client', 'data'), State('spouse', 'data'), State('joint', 'data')])
+    [Output("plot1", "figure"), Output("projection_text", "value")], [Input("calculate_button", "n_clicks")],  state=[State('xxx', 'data'), State('client', 'data'), State('spouse', 'data'), State('joint', 'data')])
 def update_graph(n, xxx, client, spouse, joint):
 
     d = {}
@@ -174,14 +178,21 @@ def update_graph(n, xxx, client, spouse, joint):
     d["start_book"]["spouse"] = spouse
     d["start_book"]["joint"] = joint
 
-    _, _, _, projection = get_projection(d)
+    sc_transactions, essential_capital_projection, surplus_capital_projection, projection = get_projection(d)
 
     fig = go.Figure(data=[
         go.Bar(name='essential', x=projection["year"], y=projection["essential"]),
         go.Bar(name='surplus', x=projection["year"], y=projection["surplus"])
     ])
 
-    return fig
+    text = ""
+    for rec in essential_capital_projection:
+        text += str(rec["start"]) + "\n"
+
+
+    return (fig, text)
+
+
 
 
 @app.callback(Output('client', 'data'), [Input('client_regular_account', 'value'),
