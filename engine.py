@@ -304,6 +304,12 @@ def get_projection(data):
         low = 0
         high = get_capital(start_book)
         essential_capital = high
+
+        #make adjustment if you don't want to sell home.
+        #if start_book["joint"][Account.HOME] > parameters["end_balance"]  and  "sell_home" not in parameters.keys():
+        #    parameters["end_balance"] = start_book["joint"][Account.HOME]
+
+
         desired_end_balance = get_future_value(parameters["start_year"],parameters["end_year"], parameters["end_balance"], parameters["inflation"])
 
         end_capital, sim = create_projection(start_book)
@@ -323,7 +329,11 @@ def get_projection(data):
 
 
             #close enough
-            if abs(desired_end_balance - end_capital) / essential_capital  < 0.005:
+            if essential_capital == 0:
+                return sim, surplus_cap_transactions
+
+            #if abs(desired_end_balance - end_capital) / essential_capital  < 0.005:
+            if abs(desired_end_balance - end_capital)  < 1000:
                 return sim, surplus_cap_transactions
 
             #there is no essential capital..all surplus

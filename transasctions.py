@@ -66,6 +66,7 @@ def createTransaction(transactions, entry_type, person, account, amount, transac
 def get_capital(book):
 
     total = book['joint'][Account.CLEARING]
+
     total += book['joint'][Account.HOME]
 
     total += book['client'][Account.REGULAR]
@@ -153,10 +154,12 @@ def rrsp_converstion_to_rrif(transactions, book, person):
 def get_mandatory_rrif_withdrawals(transactions, book, age, person, tax_rate):
 
     if book[person][Account.RRIF] > 0 and age >= 65:
-        amount = round(book[person][Account.RRIF] / (90 - age), 0)
+        if age == 90:
+            amount = book[person][Account.RRIF]
+        else:
+            amount = round(book[person][Account.RRIF] / (90 - age), 0)
         createTransaction(transactions, "debit", person, Account.RRIF, amount, TransactionType.RRIF_WITHDRAWAL, desc="mandatory rrif withdrawal")
         createTransaction(transactions, "credit",person, Account.CLEARING, amount, TransactionType.RRIF_WITHDRAWAL, desc="mandatory rrif withdrawal")
-        #createTransaction(transactions, "debit", "clearing", amount*tax_rate, "tax on rrif withdrawal")
 
 
 

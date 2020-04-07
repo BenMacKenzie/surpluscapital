@@ -84,6 +84,8 @@ app.layout = dhc.Div([
 
             dhc.Tr([dhc.Td("RRSP: "), dhc.Td(dcc.Input(id='client_rrsp_account', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_rrsp_account', type='number', placeholder='0', value='0'))]),
 
+            dhc.Tr([dhc.Td("Home"), dhc.Td(dcc.Input(id='home_value', type='number', placeholder='0', value='0')), dhc.Td(dcc.Checklist(id='sell_home', options=[{'label': 'Sell Home', 'value': 'yes'}])), dhc.Td(dcc.Input(id='sell_home_year', type='number', placeholder='0', value='0'))])
+
         ]),
 
     dhc.Table([
@@ -93,6 +95,30 @@ app.layout = dhc.Div([
                 dhc.Td(dcc.Input(id='client_pension_start_year', type='number', placeholder='0', value='0')),
                 dhc.Td(dcc.Input(id='client_pension_end_year', type='number', placeholder='0', value='0')),
                 dhc.Td(dcc.Dropdown('client_pension_index',
+                                    options=[{'label': '0', 'value': '0.0'},
+                                             {'label': '1%', 'value': '0.01'},
+                                             {'label': '2%', 'value': '0.02'},
+                                             {'label': '3%', 'value': '0.03'},
+                                             {'label': '4%', 'value': '0.04'},
+                                             {'label': '5%', 'value': '0.05'},
+                                             ], value='0.02'))]),
+        dhc.Tr([dhc.Td("client oas: "),
+                dhc.Td(dcc.Input(id='client_oas_amount', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='client_oas_start_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='client_oas_end_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Dropdown('client_oas_index',
+                                    options=[{'label': '0', 'value': '0.0'},
+                                             {'label': '1%', 'value': '0.01'},
+                                             {'label': '2%', 'value': '0.02'},
+                                             {'label': '3%', 'value': '0.03'},
+                                             {'label': '4%', 'value': '0.04'},
+                                             {'label': '5%', 'value': '0.05'},
+                                             ], value='0.02'))]),
+        dhc.Tr([dhc.Td("client cpp: "),
+                dhc.Td(dcc.Input(id='client_cpp_amount', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='client_cpp_start_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='client_cpp_end_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Dropdown('client_cpp_index',
                                     options=[{'label': '0', 'value': '0.0'},
                                              {'label': '1%', 'value': '0.01'},
                                              {'label': '2%', 'value': '0.02'},
@@ -114,7 +140,37 @@ app.layout = dhc.Div([
                                              {'label': '5%', 'value': '0.05'},
                                              ], value='0.02'))]),
 
+        dhc.Tr([dhc.Td("spouse oas: "),
+            dhc.Td(dcc.Input(id='spouse_oas_amount', type='number', placeholder='0', value='0')),
+            dhc.Td(dcc.Input(id='spouse_oas_start_year', type='number', placeholder='0', value='0')),
+            dhc.Td(dcc.Input(id='spouse_oas_end_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Dropdown('spouse_oas_index',
+                                    options=[{'label': '0', 'value': '0.0'},
+                                             {'label': '1%', 'value': '0.01'},
+                                             {'label': '2%', 'value': '0.02'},
+                                             {'label': '3%', 'value': '0.03'},
+                                             {'label': '4%', 'value': '0.04'},
+                                             {'label': '5%', 'value': '0.05'},
+                                             ], value='0.02'))]),
+
+
+        dhc.Tr([dhc.Td("spouse cpp: "),
+            dhc.Td(dcc.Input(id='spouse_cpp_amount', type='number', placeholder='0', value='0')),
+            dhc.Td(dcc.Input(id='spouse_cpp_start_year', type='number', placeholder='0', value='0')),
+            dhc.Td(dcc.Input(id='spouse_cpp_end_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Dropdown('spouse_cpp_index',
+                                    options=[{'label': '0', 'value': '0.0'},
+                                             {'label': '1%', 'value': '0.01'},
+                                             {'label': '2%', 'value': '0.02'},
+                                             {'label': '3%', 'value': '0.03'},
+                                             {'label': '4%', 'value': '0.04'},
+                                             {'label': '5%', 'value': '0.05'},
+                                             ], value='0.02'))]),
+
+
+
     ]),
+
 
 
     dhc.Div(),
@@ -153,6 +209,8 @@ app.layout = dhc.Div([
         ]),
 
 
+
+
         dhc.Button('Calculate', id='calculate_button'),
         dcc.Graph(id='plot1'),
 
@@ -185,6 +243,14 @@ app.layout = dhc.Div([
 
                                                        ]),
 
+        dhc.Div("Joint"),
+
+        dash_table.DataTable(id='joint_p_table', columns=[{"name": "year", "id": "year"},
+                                                       {"name": "clearing account", "id": "CLEARING"},
+                                                       {"name": "HOME", "id": "HOME"},
+
+
+                                                       ]),
 
         dash_table.DataTable(id='transaction_detail', columns=[{"name": "year", "id": "year"},
                                                                {"name": "person", "id": "person"},
@@ -201,8 +267,9 @@ app.layout = dhc.Div([
 
 
 
+
 @app.callback(
-    [Output("plot1", "figure"), Output("client_p_table", "data"), Output("spouse_p_table", "data"), Output("transaction_detail", "data")], [Input("calculate_button", "n_clicks")],  state=[State('xxx', 'data'), State('client', 'data'), State('spouse', 'data'), State('joint', 'data')])
+    [Output("plot1", "figure"), Output("client_p_table", "data"), Output("spouse_p_table", "data"),Output("joint_p_table", "data"), Output("transaction_detail", "data")], [Input("calculate_button", "n_clicks")],  state=[State('xxx', 'data'), State('client', 'data'), State('spouse', 'data'), State('joint', 'data')])
 def update_graph(n, xxx, client, spouse, joint):
 
     d = {}
@@ -211,6 +278,7 @@ def update_graph(n, xxx, client, spouse, joint):
     d["start_book"]["client"] = client
     d["start_book"]["spouse"] = spouse
     d["start_book"]["joint"] = joint
+
 
     sc_transactions, essential_capital_projection, surplus_capital_projection, projection = get_projection(d)
 
@@ -228,6 +296,11 @@ def update_graph(n, xxx, client, spouse, joint):
     spouse_proj = [record['start']['spouse'] for record in essential_capital_projection[:-1]]
     spouse_proj.append(essential_capital_projection[-1]['end']['spouse'])
 
+    joint_proj = [record['start']['joint'] for record in essential_capital_projection[:-1]]
+    joint_proj.append(essential_capital_projection[-1]['end']['joint'])
+
+
+
     transactions=[]
 
     for i in range(len(essential_capital_projection)):
@@ -240,8 +313,15 @@ def update_graph(n, xxx, client, spouse, joint):
 
 
 
-    return (fig, client_proj, spouse_proj, transactions)
+    return (fig, client_proj, spouse_proj, joint_proj, transactions)
 
+
+
+
+@app.callback(Output('joint', 'data'),  [Input('home_value', 'value')], state=[State("joint", "data")])
+def update_joint(home_value, data):
+    data[Account.HOME] = int(home_value)
+    return data
 
 
 
@@ -249,7 +329,9 @@ def update_graph(n, xxx, client, spouse, joint):
                                          Input('client_regular_account_bv', 'value'),
                                          Input('client_tfsa_account', 'value'),
                                          Input('client_rrif_account', 'value'),
-                                         Input('client_rrsp_account', 'value')],
+                                         Input('client_rrsp_account', 'value'),
+
+                                         ],
 
                                         state=[State('client', 'data')])
 def update_client_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, data):
@@ -258,6 +340,8 @@ def update_client_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, data):
     data[Account.TFSA] = int(tfsa)
     data[Account.RRSP] = int(rrsp)
     data[Account.RRIF] = int(rrif)
+
+
     return data
 
 
@@ -290,16 +374,39 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, data):
                                       Input('client_pension_start_year', 'value'),
                                       Input('client_pension_end_year', 'value'),
                                       Input('client_pension_index', 'value'),
+                                      Input('client_oas_amount', 'value'),
+                                      Input('client_oas_start_year', 'value'),
+                                      Input('client_oas_end_year', 'value'),
+                                      Input('client_oas_index', 'value'),
+                                      Input('client_cpp_amount', 'value'),
+                                      Input('client_cpp_start_year', 'value'),
+                                      Input('client_cpp_end_year', 'value'),
+                                      Input('client_cpp_index', 'value'),
                                       Input('spouse_pension_amount', 'value'),
                                       Input('spouse_pension_start_year', 'value'),
                                       Input('spouse_pension_end_year', 'value'),
-                                      Input('spouse_pension_index', 'value')
+                                      Input('spouse_pension_index', 'value'),
+                                      Input('spouse_oas_amount', 'value'),
+                                      Input('spouse_oas_start_year', 'value'),
+                                      Input('spouse_oas_end_year', 'value'),
+                                      Input('spouse_oas_index', 'value'),
+                                      Input('spouse_cpp_amount', 'value'),
+                                      Input('spouse_cpp_start_year', 'value'),
+                                      Input('spouse_cpp_end_year', 'value'),
+                                      Input('spouse_cpp_index', 'value'),
+                                      Input('sell_home', 'value'),
+                                      Input('sell_home_year', 'value')
 
                                       ], state=[State('xxx', 'data')])
 def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income_requirements,
                        client_age, spouse_age, end_year,
                        client_pension_amount, client_pension_start, client_pension_end, client_pension_index,
+                       client_oas_amount, client_oas_start, client_oas_end, client_oas_index,
+                       client_cpp_amount, client_cpp_start, client_cpp_end, client_cpp_index,
                        spouse_pension_amount, spouse_pension_start, spouse_pension_end, spouse_pension_index,
+                       spouse_oas_amount, spouse_oas_start, spouse_oas_end, spouse_oas_index,
+                       spouse_cpp_amount, spouse_cpp_start, spouse_cpp_end, spouse_cpp_index,
+                       sell_home, sell_home_year,
                        data):
     data["end_balance"]= int(balance)
     data["growth_rate"] = float(growth_rate)
@@ -322,6 +429,26 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
         client_pension["index_rate"] = float(client_pension_index)
         data["pensions"].append(client_pension)
 
+    if client_oas_amount != '0':
+        client_oas = {}
+        client_oas["name"] = "client_oas"
+        client_oas["person"] = "client"
+        client_oas["amount"] = int(client_oas_amount)
+        client_oas["start_year"] = int(client_oas_start)
+        client_oas["end_year"] = int(client_oas_end)
+        client_oas["index_rate"] = float(client_oas_index)
+        data["pensions"].append(client_oas)
+
+    if client_cpp_amount != '0':
+        client_cpp = {}
+        client_cpp["name"] = "client_cpp"
+        client_cpp["person"] = "client"
+        client_cpp["amount"] = int(client_cpp_amount)
+        client_cpp["start_year"] = int(client_cpp_start)
+        client_cpp["end_year"] = int(client_cpp_end)
+        client_cpp["index_rate"] = float(client_cpp_index)
+        data["pensions"].append(client_cpp)
+
     if spouse_pension_amount != '0':
         spouse_pension = {}
         spouse_pension["name"] = "spouse_pension"
@@ -331,6 +458,31 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
         spouse_pension["end_year"] = int(spouse_pension_end)
         spouse_pension["index_rate"] = float(spouse_pension_index)
         data["pensions"].append(spouse_pension)
+
+
+    if spouse_oas_amount != '0':
+        spouse_oas= {}
+        spouse_oas["name"] = "spouse_oas"
+        spouse_oas["person"] = "spouse"
+        spouse_oas["amount"] = int(spouse_oas_amount)
+        spouse_oas["start_year"] = int(spouse_oas_start)
+        spouse_oas["end_year"] = int(spouse_oas_end)
+        spouse_oas["index_rate"] = float(spouse_oas_index)
+        data["pensions"].append(spouse_oas)
+
+    if spouse_cpp_amount != '0':
+        spouse_pension = {}
+        spouse_pension["name"] = "spouse_cpp"
+        spouse_pension["person"] = "spouse"
+        spouse_pension["amount"] = int(spouse_cpp_amount)
+        spouse_pension["start_year"] = int(spouse_cpp_start)
+        spouse_pension["end_year"] = int(spouse_cpp_end)
+        spouse_pension["index_rate"] = float(spouse_cpp_index)
+        data["pensions"].append(spouse_pension)
+
+    if sell_home != []:
+        data["sell_home"] = sell_home_year
+
 
     return data
 
