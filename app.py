@@ -214,43 +214,15 @@ app.layout = dhc.Div([
         dhc.Button('Calculate', id='calculate_button'),
         dcc.Graph(id='plot1'),
 
+        dash_table.DataTable(id='reportxxx'),
+
         dcc.Store(id="client", storage_type='memory', data=data["start_book"]["client"].copy()),
         dcc.Store(id="spouse", storage_type='memory', data=data["start_book"]["spouse"].copy()),
         dcc.Store(id="joint", storage_type='memory', data=data["start_book"]["joint"].copy()),
         dcc.Store(id="xxx", storage_type='memory', data=data["parameters"]),
 
 
-
-
-        dash_table.DataTable(id='client_p_table', columns=[{"name": "year", "id": "year"},
-                                                    {"name": "regular asset", "id": "NON_REGISTERED_ASSET"},
-                                                    {"name": "book value", "id": "REGULAR_BOOK_VALUE"},
-                                                    {"name": "rrsp", "id": "RRSP"},
-                                                    {"name": "rrif", "id": "RRIF"},
-                                                    {"name": "tfsa", "id": "TFSA"},
-
-
-                                        ]),
-
-        dhc.Div("Spouse"),
-
-        dash_table.DataTable(id='spouse_p_table', columns=[{"name": "year", "id": "year"},
-                                                       {"name": "regular asset", "id": "NON_REGISTERED_ASSET"},
-                                                       {"name": "book value", "id": "REGULAR_BOOK_VALUE"},
-                                                       {"name": "rrsp", "id": "RRSP"},
-                                                       {"name": "rrif", "id": "RRIF"},
-                                                       {"name": "tfsa", "id": "TFSA"},
-
-                                                       ]),
-
-        dhc.Div("Joint"),
-
-        dash_table.DataTable(id='joint_p_table', columns=[{"name": "year", "id": "year"},
-                                                       {"name": "clearing account", "id": "CLEARING"},
-                                                       {"name": "HOME", "id": "HOME"},
-
-
-                                                       ]),
+        dhc.Div("Transation Detail"),
 
         dash_table.DataTable(id='transaction_detail', columns=[{"name": "year", "id": "year"},
                                                                {"name": "person", "id": "person"},
@@ -262,14 +234,15 @@ app.layout = dhc.Div([
                                             ]),
 
 
-
     ])
 
 
 
 
 @app.callback(
-    [Output("plot1", "figure"), Output("client_p_table", "data"), Output("spouse_p_table", "data"),Output("joint_p_table", "data"), Output("transaction_detail", "data")], [Input("calculate_button", "n_clicks")],  state=[State('xxx', 'data'), State('client', 'data'), State('spouse', 'data'), State('joint', 'data')])
+    [Output("plot1", "figure"), Output("transaction_detail", "data"), Output("reportxxx", "columns"),
+     Output("reportxxx", "data")], [Input("calculate_button", "n_clicks")],
+    state=[State('xxx', 'data'), State('client', 'data'), State('spouse', 'data'), State('joint', 'data')])
 def update_graph(n, xxx, client, spouse, joint):
 
     d = {}
@@ -280,7 +253,7 @@ def update_graph(n, xxx, client, spouse, joint):
     d["start_book"]["joint"] = joint
 
 
-    sc_transactions, essential_capital_projection, surplus_capital_projection, projection = get_projection(d)
+    sc_transactions, essential_capital_projection, surplus_capital_projection, projection, report = get_projection(d)
 
     fig = go.Figure(data=[
         go.Bar(name='essential', x=projection["year"], y=projection["essential"]),
@@ -291,7 +264,7 @@ def update_graph(n, xxx, client, spouse, joint):
 
 
     client_proj = [record['start']['client'] for record in essential_capital_projection[:-1]]
-    client_proj.append(essential_capital_projection[-1]['end']['spouse'])
+    client_proj.append(essential_capital_projection[-1]['end']['client'])
 
     spouse_proj = [record['start']['spouse'] for record in essential_capital_projection[:-1]]
     spouse_proj.append(essential_capital_projection[-1]['end']['spouse'])
@@ -312,8 +285,9 @@ def update_graph(n, xxx, client, spouse, joint):
 
 
 
+    report_column_names = [{"name": i, "id": i} for i in report.columns]
 
-    return (fig, client_proj, spouse_proj, joint_proj, transactions)
+    return (fig,transactions, report_column_names, report.to_dict("records"))
 
 
 

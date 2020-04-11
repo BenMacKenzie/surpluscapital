@@ -299,7 +299,22 @@ def meet_cash_req_from_tfsa(transactions, book, person):
 
 
 
-def invest_funds(transactions,book):
-    createTransaction(transactions, "credit", "client", Account.REGULAR, book["joint"][Account.CLEARING], TransactionType.REGULAR_ASSET_INVESTMENT)
-    createTransaction(transactions, "debit", "joint", Account.CLEARING, book["joint"][Account.CLEARING], TransactionType.REGULAR_ASSET_INVESTMENT)
+def invest_funds(transactions,book, parameters):
+    amount_to_invest = book["joint"][Account.CLEARING]
+    createTransaction(transactions, "debit", "joint", Account.CLEARING, book["joint"][Account.CLEARING],
+                      TransactionType.REGULAR_ASSET_INVESTMENT)
 
+    if parameters["spouse"]:
+        amount_to_invest = amount_to_invest / 2
+        createTransaction(transactions, "credit", "client", Account.REGULAR, amount_to_invest, TransactionType.REGULAR_ASSET_INVESTMENT)
+        createTransaction(transactions, "credit", "spouse", Account.REGULAR, amount_to_invest,
+                          TransactionType.REGULAR_ASSET_INVESTMENT)
+        createTransaction(transactions, "credit", "client", Account.REGULAR_BOOK_VALUE, amount_to_invest,
+                          TransactionType.REGULAR_ASSET_INVESTMENT)
+        createTransaction(transactions, "credit", "spouse", Account.REGULAR_BOOK_VALUE, amount_to_invest,
+                          TransactionType.REGULAR_ASSET_INVESTMENT)
+    else:
+        createTransaction(transactions, "credit", "client", Account.REGULAR, amount_to_invest,
+                          TransactionType.REGULAR_ASSET_INVESTMENT)
+        createTransaction(transactions, "credit", "client", Account.REGULAR_BOOK_VALUE, amount_to_invest,
+                          TransactionType.REGULAR_ASSET_INVESTMENT)

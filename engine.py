@@ -142,7 +142,7 @@ def get_projection(data):
         print(book['joint'][Account.CLEARING])
 
         if book['joint'][Account.CLEARING] > 0:
-            invest_funds(transactions, book)
+            invest_funds(transactions, book, parameters)
 
         else:
             #client regular asset
@@ -300,6 +300,55 @@ def get_projection(data):
 
         return transactions
 
+
+    def create_report(essential_capital_projection):
+
+
+        spouse_columns = {"NON_REGISTERED_ASSET": "SPOUSE_NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE": "SPOUSE_REGULAR_BOOK_VALUE", "RRSP": "SPOUSE_RRSP", "RRIF": "SPOUSE_RRIF", "TFSA": "SPOUSE_TFSA", "year": "spouse_year"}
+
+        client_proj = [record['start']['client'] for record in essential_capital_projection[:-1]]
+        client_proj.append(essential_capital_projection[-1]['end']['client'])
+
+        spouse_proj = [record['start']['spouse'] for record in essential_capital_projection[:-1]]
+        spouse_proj.append(essential_capital_projection[-1]['end']['spouse'])
+
+
+        joint_proj = [record['start']['joint'] for record in essential_capital_projection[:-1]]
+        joint_proj.append(essential_capital_projection[-1]['end']['joint'])
+
+        for i in range(len(essential_capital_projection)):
+            client_proj[i]["year"] = essential_capital_projection[i]["start"]["year"]
+            #spouse_proj[i]["year"] = essential_capital_projection[i]["start"]["year"]
+
+
+        df_c = pd.DataFrame(client_proj)
+        df_s = pd.DataFrame(spouse_proj)
+        df_s.rename(columns=spouse_columns, inplace=True)
+        df_j = pd.DataFrame(joint_proj)
+
+        df = pd.concat([df_c, df_s, df_j], axis=1)
+
+        df = df.round(0)
+
+        col_names = [y for y in df["year"]]
+
+
+        df.drop(['year'], 1, inplace=True)
+
+        df = df.T
+
+        df.columns = col_names
+
+        df = df.reset_index()
+
+
+        df.rename(columns={'index': 'year'}, inplace=True)
+
+
+        return df
+
+
+
     def find_essential_capital(start_book):
         low = 0
         high = get_capital(start_book)
@@ -372,7 +421,8 @@ def get_projection(data):
     a.append([essential_capital_projection[-1]["end"]["year"], get_capital(essential_capital_projection[-1]["end"]),
               get_capital(surplus_capital_projection[-1]["end"])])
 
-    return sc_transactions, essential_capital_projection, surplus_capital_projection, pd.DataFrame(a, columns=["year", "essential", "surplus"])
+    report = create_report(essential_capital_projection)
+    return sc_transactions, essential_capital_projection, surplus_capital_projection, pd.DataFrame(a, columns=["year", "essential", "surplus"]), report
 
 
 
