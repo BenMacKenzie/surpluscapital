@@ -120,10 +120,10 @@ def get_taxable_income(transactions, person):
                TransactionType.DIVIDEND_INCOME, TransactionType.PENSION_INCOME, TransactionType.EARNED_INCOME]
     for transaction in transactions:
         if transaction["person"] == person:
-            if transaction["transaction_type"] in taxable:
+            if transaction["transaction_type"] in taxable and transaction["entry_type"] == "credit":
                 if transaction["transaction_type"] == TransactionType.SALE_OF_REGULAR_ASSET:
                     taxable_income += (transaction["amount"] - transaction["book_value"]) * 0.5
-                if transaction["transaction_type"] == TransactionType.DIVIDEND_INCOME:
+                elif transaction["transaction_type"] == TransactionType.DIVIDEND_INCOME:
                     if transaction['account'] == Account.REGULAR:
                         taxable_income += transaction["amount"]
 
@@ -171,7 +171,7 @@ def sell_regular_asset(transactions, person, book, amount, tax_rate):
     createTransaction(transactions,"debit", person, Account.REGULAR_BOOK_VALUE, round((amount / total) * bookvalue,0), TransactionType.BOOK_VALUE_ADJUSTMENT)
     createTransaction(transactions,"credit", person, Account.CLEARING, amount, TransactionType.SALE_OF_REGULAR_ASSET)
 
-    realized_cap_gain = amount * (total - bookvalue) / total
+    realized_cap_gain = (amount * (total - bookvalue) / total) * 0.5
     tax = calculate_marginal_tax(income, realized_cap_gain, tax_rate)
     createTransaction(transactions,"debit", person, Account.CLEARING, tax, TransactionType.TAX, desc="tax on sale of asset")
 
