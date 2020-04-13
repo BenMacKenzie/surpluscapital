@@ -22,7 +22,8 @@ class TransactionType(str, Enum):
     REGULAR_ASSET_INVESTMENT = "REGULAR_ASSET_INVESTMENT",
     NEEDS = "NEEDS",
     TAX =  "TAX",
-    REMOVE_SURPLUS_CAPITAL = "REMOVE_SURPLUS_CAPITAL"
+    REMOVE_SURPLUS_CAPITAL = "REMOVE_SURPLUS_CAPITAL",
+    CHARITABLE_DONATIONS = "CHARITABLE_DONATIONS"
 
 
 
@@ -95,13 +96,11 @@ def process_transactions(book, transactions):
         if account==Account.CLEARING:
             person = "joint"
 
-        try:
-            if type == "debit":
-                book[person][account] -= amount
-            else:
-                book[person][account] += amount
-        except Exception as e:
-            print(transaction)
+
+        if type == "debit":
+            book[person][account] -= amount
+        else:
+            book[person][account] += amount
 
     return book
 
@@ -190,12 +189,21 @@ def sell_tfsa(transactions, person, amount):
     createTransaction(transactions, "credit", person, Account.CLEARING, amount, TransactionType.TFSA_WITHDRAWAL)
 
 
-def process_pensions(transactions, start_year, year, pensions, tax_rate):
+def process_pensions(transactions, start_year, year, pensions):
     for pension in pensions:
         if pension["start_year"] <= year and pension["end_year"] >= year:
 
             pension_amount= get_future_value(start_year, year, pension["amount"], pension["index_rate"])
             createTransaction(transactions, "credit", pension["person"], Account.CLEARING, pension_amount, TransactionType.PENSION_INCOME)
+
+
+
+def process_incomes(transactions, start_year, year, incomes):
+    for inccome in incomes:
+        if inccome["start_year"] <= year and inccome["end_year"] >= year:
+
+            pension_amount= get_future_value(start_year, year, inccome["amount"], inccome["index_rate"])
+            createTransaction(transactions, "credit", inccome["person"], Account.CLEARING, pension_amount, TransactionType.EARNED_INCOME)
 
 
 def calculate_tax(transactions, person, tax_rates):
@@ -211,7 +219,10 @@ def generate_base_transactions(transactions, current_book, parameters):
     tax_rate = parameters["tax_rate"]
     year = current_book["year"]
     createTransaction(transactions, "debit", "joint", Account.CLEARING, get_future_value(parameters["start_year"], year, parameters["income_requirements"], parameters["inflation"]), TransactionType.NEEDS, desc="living expense")
-    process_pensions(transactions, parameters["start_year"], year, parameters["pensions"], parameters["tax_rate"])
+    createTransaction(transactions, "debit", "joint", Account.CLEARING, get_future_value(parameters["start_year"], year, parameters["charitable_donations"], parameters["inflation"]), TransactionType.CHARITABLE_DONATIONS, desc="living expense")
+
+    process_pensions(transactions, parameters["start_year"], year, parameters["pensions"])
+    process_incomes(transactions, parameters["start_year"], year, parameters["incomes"])
 
     if get_age(year, parameters['start_year'], parameters['client_age']) == 71:
         rrsp_converstion_to_rrif(transactions, current_book,'client' )

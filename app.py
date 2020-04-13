@@ -88,6 +88,34 @@ app.layout = dhc.Div([
 
         ]),
 
+dhc.Table([
+        dhc.Tr([dhc.Td("earned income"), dhc.Td("amount"), dhc.Td("start year"), dhc.Td("end year"), dhc.Td("index")]),
+        dhc.Tr([dhc.Td("client: "),
+                dhc.Td(dcc.Input(id='client_income_amount', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='client_income_start_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='client_income_end_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Dropdown('client_income_index',
+                                    options=[{'label': '0', 'value': '0.0'},
+                                             {'label': '1%', 'value': '0.01'},
+                                             {'label': '2%', 'value': '0.02'},
+                                             {'label': '3%', 'value': '0.03'},
+                                             {'label': '4%', 'value': '0.04'},
+                                             {'label': '5%', 'value': '0.05'},
+                                             ], value='0.02'))]),
+        dhc.Tr([dhc.Td("spouse: "),
+                dhc.Td(dcc.Input(id='spouse_income_amount', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='spouse_income_start_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='spouse_income_end_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Dropdown('spouse_income_index',
+                                    options=[{'label': '0', 'value': '0.0'},
+                                             {'label': '1%', 'value': '0.01'},
+                                             {'label': '2%', 'value': '0.02'},
+                                             {'label': '3%', 'value': '0.03'},
+                                             {'label': '4%', 'value': '0.04'},
+                                             {'label': '5%', 'value': '0.05'},
+                                             ], value='0.02'))])]),
+
+
     dhc.Table([
         dhc.Tr([dhc.Td("pension name"), dhc.Td("amount"), dhc.Td("start year"), dhc.Td("end year"), dhc.Td("index")]),
         dhc.Tr([dhc.Td("client pension: "),
@@ -179,6 +207,8 @@ app.layout = dhc.Div([
             dhc.Tr([dhc.Td("End Year"),  dhc.Td(dcc.Input(id="end_year", type='number', placeholder='0', value='2040'))]),
 
             dhc.Tr([dhc.Td("Income Requirements"), dhc.Td(dcc.Input(id="income_requirements", type='number', placeholder='0', value='100000'))]),
+            dhc.Tr([dhc.Td("Charitable Donations"), dhc.Td(dcc.Input(id="charitable_donations", type='number', placeholder='0', value='0'))]),
+
             dhc.Tr([dhc.Td("End Balance"), dhc.Td(dcc.Input(id="end_balance",type='number', placeholder='0', value='0' ))]),
             dhc.Tr([dhc.Td("Growth Rate"), dhc.Td(dcc.Dropdown('growth_rate',
                                 options=[{'label': '0', 'value': '0.0'},
@@ -330,9 +360,14 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, data):
                                       Input('income_rate', 'value'),
                                       Input('inflation_rate', 'value'),
                                       Input('income_requirements', 'value'),
+                                      Input('charitable_donations', 'value'),
                                       Input('client_age', 'value'),
                                       Input('spouse_age', 'value'),
                                       Input('end_year', 'value'),
+                                      Input('client_income_amount', 'value'),
+                                      Input('client_income_start_year', 'value'),
+                                      Input('client_income_end_year', 'value'),
+                                      Input('client_income_index', 'value'),
                                       Input('client_pension_amount', 'value'),
                                       Input('client_pension_start_year', 'value'),
                                       Input('client_pension_end_year', 'value'),
@@ -345,6 +380,10 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, data):
                                       Input('client_cpp_start_year', 'value'),
                                       Input('client_cpp_end_year', 'value'),
                                       Input('client_cpp_index', 'value'),
+                                      Input('spouse_income_amount', 'value'),
+                                      Input('spouse_income_start_year', 'value'),
+                                      Input('spouse_income_end_year', 'value'),
+                                      Input('spouse_income_index', 'value'),
                                       Input('spouse_pension_amount', 'value'),
                                       Input('spouse_pension_start_year', 'value'),
                                       Input('spouse_pension_end_year', 'value'),
@@ -361,11 +400,13 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, data):
                                       Input('sell_home_year', 'value')
 
                                       ], state=[State('xxx', 'data')])
-def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income_requirements,
+def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income_requirements, charitable_donations,
                        client_age, spouse_age, end_year,
+                       client_income_amount, client_income_start, client_income_end, client_income_index,
                        client_pension_amount, client_pension_start, client_pension_end, client_pension_index,
                        client_oas_amount, client_oas_start, client_oas_end, client_oas_index,
                        client_cpp_amount, client_cpp_start, client_cpp_end, client_cpp_index,
+                       spouse_income_amount, spouse_income_start, spouse_income_end, spouse_income_index,
                        spouse_pension_amount, spouse_pension_start, spouse_pension_end, spouse_pension_index,
                        spouse_oas_amount, spouse_oas_start, spouse_oas_end, spouse_oas_index,
                        spouse_cpp_amount, spouse_cpp_start, spouse_cpp_end, spouse_cpp_index,
@@ -376,9 +417,34 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
     data["income_rate"] = float(income_rate)
     data["inflation"] = float(inflation_rate)
     data["income_requirements"] = int(income_requirements)
+    data["charitable_donations"] = int(charitable_donations)
     data["client_age"]=int(client_age)
     data["spouse_age"] = int(spouse_age)
     data["end_year"]=int(end_year)
+
+
+    data["incomes"] = []
+    if client_income_amount != '0':
+        client_pension = {}
+        client_pension["name"] = "client_income"
+        client_pension["person"] = "client"
+        client_pension["amount"] = int(client_income_amount)
+        client_pension["start_year"] = int(client_income_start)
+        client_pension["end_year"] = int(client_income_end)
+        client_pension["index_rate"] = float(client_income_index)
+        data["incomes"].append(client_pension)
+
+    if spouse_income_amount != '0':
+        client_pension = {}
+        client_pension["name"] = "spouse_income"
+        client_pension["person"] = "spouse"
+        client_pension["amount"] = int(spouse_income_amount)
+        client_pension["start_year"] = int(spouse_income_start)
+        client_pension["end_year"] = int(spouse_income_end)
+        client_pension["index_rate"] = float(spouse_income_index)
+        data["incomes"].append(client_pension)
+
+
 
     data["pensions"] = []
 

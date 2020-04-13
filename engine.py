@@ -305,7 +305,7 @@ def get_projection(data):
     def create_report(essential_capital_projection):
 
 
-        reporting_transactions  = ["NEEDS", "EARNED_INCOME", "PENSION_INCOME", "REGULAR_DIVIDEND", "REGISTERED_DIVIDEND", "REGULAR_ASSET_GROWTH", "REGISTERED_ASSET_GROWTH", "SALE_OF_REGULAR_ASSET",
+        reporting_transactions  = ["NEEDS", "CHARITABLE_DONATIONS", "EARNED_INCOME", "PENSION_INCOME", "REGULAR_DIVIDEND", "REGISTERED_DIVIDEND", "REGULAR_ASSET_GROWTH", "REGISTERED_ASSET_GROWTH", "SALE_OF_REGULAR_ASSET",
                                    "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TFSA_WITHDRAWAL", "TAX"]
 
         spouse_reporting_transactions = ["SPOUSE_EARNED_INCOME", "SPOUSE_PENSION_INCOME", "SPOUSE_REGULAR_DIVIDEND", "SPOUSE_REGISTERED_DIVIDEND", "SPOUSE_REGULAR_ASSET_GROWTH", "SPOUSE_REGISTERED_ASSET_GROWTH",
@@ -326,7 +326,7 @@ def get_projection(data):
                     t_type = "SPOUSE_" + t_type
 
                 if t_type in reporting_transactions:
-                    if t_type in ["NEEDS", "TAX", "SPOUSE_TAX"]  and t.entry_type == "debit":
+                    if t_type in ["NEEDS", "CHARITABLE_DONATIONS", "TAX", "SPOUSE_TAX"]  and t.entry_type == "debit":
                         df_t.iloc[i][t_type] += t.amount
 
                     elif  t.entry_type == "credit":
@@ -435,7 +435,9 @@ def get_projection(data):
 
     #remove income requiremenrts and pensions
     parameters["income_requirements"] = 0
+    parameters["charitable_donations"] = 0
     parameters["pensions"] = []
+    parameters["incomes"] = []
 
 
     #project surplus capital.
