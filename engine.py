@@ -2,6 +2,7 @@
 from transasctions import *
 import json
 import pandas as pd
+import numpy as np
 
 
 
@@ -304,6 +305,35 @@ def get_projection(data):
     def create_report(essential_capital_projection):
 
 
+        reporting_transactions  = ["EARNED_INCOME", "PENSION_INCOME", "DIVIDEND_INCOME", "SALE_OF_REGULAR_ASSET",
+                                   "RRSP_WITHDRAWAL", "RRSP_WITHDRAWAL", "TFSA_WITHDRAWAL", "SALE_OF_REGULAR_ASSET",
+                                   "NEEDS", "TAX"]
+
+        spouse_reporting_transactions = ["SPOUSE_EARNED_INCOME", "SPOUSE_PENSION_INCOME", "SPOUSE_DIVIDEND_INCOME", "SPOUSE_SALE_OF_REGULAR_ASSET",
+                                   "SPOUSE_RRSP_WITHDRAWAL", "SPOUSE_RRSP_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL", "SPOUSE_TAX" ]
+
+        if parameters["spouse"]:
+            reporting_transactions += spouse_reporting_transactions
+
+        num_years = len(essential_capital_projection)
+
+        df_t = pd.DataFrame(np.zeros((num_years, len(reporting_transactions))))
+        df_t.columns = reporting_transactions
+
+        for i in range(len(essential_capital_projection)):
+            for t in essential_capital_projection[i]["end"]["transactions"]:
+                t_type =  t["transaction_type"].value
+                if t["person"] == "spouse":
+                    t_type = "SPOUSE_" + t_type
+
+                if t_type in reporting_transactions:
+                    if t_type in ["NEEDS", "TAX", "SPOUSE_TAX"]  and t["entry_type"] == "debit":
+                        df_t.iloc[i][t_type] += t["amount"]
+
+                    elif  t["entry_type"] == "credit":
+                            df_t.iloc[i][t_type] += t["amount"]
+
+
         spouse_columns = {"NON_REGISTERED_ASSET": "SPOUSE_NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE": "SPOUSE_REGULAR_BOOK_VALUE", "RRSP": "SPOUSE_RRSP", "RRIF": "SPOUSE_RRIF", "TFSA": "SPOUSE_TFSA", "year": "spouse_year"}
 
         client_proj = [record['start']['client'] for record in essential_capital_projection[:-1]]
@@ -326,7 +356,7 @@ def get_projection(data):
         df_s.rename(columns=spouse_columns, inplace=True)
         df_j = pd.DataFrame(joint_proj)
 
-        df = pd.concat([df_c, df_s, df_j], axis=1)
+        df = pd.concat([df_c, df_s, df_j, df_t], axis=1)
 
         df = df.round(0)
 
@@ -348,7 +378,8 @@ def get_projection(data):
         return df
 
 
-
+    #TODO...problem with transactions...in first year, start transactions are just handling surplus capital....the real transactions for the
+    #year are in end, subsequently, tranaction are in start....or possibly first entry in project is not the first year...
     def find_essential_capital(start_book):
         low = 0
         high = get_capital(start_book)

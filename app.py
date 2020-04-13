@@ -222,16 +222,16 @@ app.layout = dhc.Div([
         dcc.Store(id="xxx", storage_type='memory', data=data["parameters"]),
 
 
-        dhc.Div("Transation Detail"),
+#        dhc.Div("Transation Detail"),
 
-        dash_table.DataTable(id='transaction_detail', columns=[{"name": "year", "id": "year"},
-                                                               {"name": "person", "id": "person"},
-                                                               {"name": "entry_type", "id": "entry_type"},
-                                                               {"name": "account", "id": "account"},
-                                                               {"name": "amount", "id": "amount"},
-                                                               {"name": "transaction_type", "id": "transaction_type"},
-                                                               {"name": "desc", "id": "desc"}
-                                            ]),
+#        dash_table.DataTable(id='transaction_detail', columns=[{"name": "year", "id": "year"},
+#                                                               {"name": "person", "id": "person"},
+#                                                               {"name": "entry_type", "id": "entry_type"},
+#                                                               {"name": "account", "id": "account"},
+#                                                               {"name": "amount", "id": "amount"},
+#                                                               {"name": "transaction_type", "id": "transaction_type"},
+#                                                               {"name": "desc", "id": "desc"}
+#                                            ]),
 
 
     ])
@@ -240,7 +240,7 @@ app.layout = dhc.Div([
 
 
 @app.callback(
-    [Output("plot1", "figure"), Output("transaction_detail", "data"), Output("reportxxx", "columns"),
+    [Output("plot1", "figure"), Output("reportxxx", "columns"),
      Output("reportxxx", "data")], [Input("calculate_button", "n_clicks")],
     state=[State('xxx', 'data'), State('client', 'data'), State('spouse', 'data'), State('joint', 'data')])
 def update_graph(n, xxx, client, spouse, joint):
@@ -287,7 +287,7 @@ def update_graph(n, xxx, client, spouse, joint):
 
     report_column_names = [{"name": i, "id": i} for i in report.columns]
 
-    return (fig,transactions, report_column_names, report.to_dict("records"))
+    return (fig, report_column_names, report.to_dict("records"))
 
 
 

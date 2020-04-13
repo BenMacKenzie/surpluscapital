@@ -50,17 +50,19 @@ def amount_of_regular_asset_to_sell(need, book_value_ratio, starting_income, tax
     #book_value_ratio =  (value - book_value) / value
     #0.5 is tax rate adjustment for cap gains
 
+    if book_value_ratio == 0:
+        return need
+
     amount = 0
     for (level, rate) in tax_rates['marginal']:
         rate = rate * 0.5 * book_value_ratio
         if starting_income <= level:
-
-            if (need / (1 - rate)) < level - starting_income:
+            if  need / (1 - rate) < (level - starting_income)/(0.5 * book_value_ratio):
                 amount += need / (1 - rate)
                 return amount
             else:
-                amount += (level - starting_income)
-                need -= (level - starting_income) * (1 - rate)
+                amount += (level - starting_income) / 0.5
+                need -= ((level - starting_income) / 0.5) * (1 - rate)
                 starting_income = level
 
 

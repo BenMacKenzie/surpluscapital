@@ -110,9 +110,6 @@ def process_transactions(book, transactions):
 
 
 
-#use of clearning account will be a problem....can't distinguish between client and spouse income....
-#probably use the right person for transaction, but just put in logic to find the clearning account....
-
 
 def get_taxable_income(transactions, person):
     taxable_income = 0
