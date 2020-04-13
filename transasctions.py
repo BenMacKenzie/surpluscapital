@@ -7,8 +7,10 @@ from tax import amount_of_deferred_asset_to_sell, amount_of_regular_asset_to_sel
 class TransactionType(str, Enum):
     EARNED_INCOME = "EARNED_INCOME",
     PENSION_INCOME = "PENSION_INCOME",
-    DIVIDEND_INCOME = "DIVIDEND_INCOME",
-    ASSET_GROWTH = "ASSET_GROWTH",
+    REGULAR_DIVIDEND = "DIVIDEND_INCOME",
+    REGULAR_ASSET_GROWTH = "REGULAR_ASSET_GROWTH",
+    REGISTERERD_DIVIDEND = "REGISTERERD_DIVIDEND",
+    REGISTERED_ASSET_GROWTH = "REGISTERED_ASSET_GROWTH",
     HOME_APPRECIATION = "HOME_APPRECIATION",
     SALE_OF_REGULAR_ASSET = "SALE_OF_REGULAR_ASSET",
     RRSP_CONVERSION = "RRSP_CONVERSION",
@@ -23,12 +25,6 @@ class TransactionType(str, Enum):
     REMOVE_SURPLUS_CAPITAL = "REMOVE_SURPLUS_CAPITAL"
 
 
-class Person(Enum):
-    CLIENT = 1,
-    SPOUSE = 2,
-    JOINT = 3  #needs, clearning account,
-
-
 
 class Account(str, Enum):
     REGULAR="NON_REGISTERED_ASSET",
@@ -40,6 +36,16 @@ class Account(str, Enum):
     CLEARING = "CLEARING"
 
 
+class Transaction():
+    def __init__(self, entry_type, person, account, amount, transaction_type, book_value=0, desc=""):
+        self.entry_type = entry_type
+        self.person = person
+        self.account = account
+        self.amount = amount
+        self.transaction_type = transaction_type
+        self.book_value = book_value
+        self.desc = desc
+
 
 
 def get_future_value(start_year, future_year, value, factor):
@@ -47,16 +53,7 @@ def get_future_value(start_year, future_year, value, factor):
 
 
 def createTransaction(transactions, entry_type, person, account, amount, transaction_type, book_value=0, desc=""):
-    transaction = {
-            "entry_type"  : entry_type,
-            "person": person,
-            "account" : account,
-            "amount": amount,
-            "transaction_type" : transaction_type,
-            "book_value" : book_value,
-            "desc": desc
-
-        }
+    transaction = Transaction(entry_type, person, account, amount, transaction_type, book_value=book_value, desc=desc)
 
     transactions.append(transaction)
 
@@ -90,10 +87,10 @@ def process_transactions(book, transactions):
     book = copy.deepcopy(book)
 
     for transaction in transactions:
-        person = transaction["person"]
-        account = transaction["account"]
-        amount = transaction["amount"]
-        type = transaction["entry_type"]
+        person = transaction.person
+        account = transaction.account
+        amount = transaction.amount
+        type = transaction.entry_type
 
         if account==Account.CLEARING:
             person = "joint"
@@ -114,18 +111,16 @@ def process_transactions(book, transactions):
 def get_taxable_income(transactions, person):
     taxable_income = 0
     taxable = [TransactionType.SALE_OF_REGULAR_ASSET, TransactionType.RRIF_WITHDRAWAL, TransactionType.RRSP_WITHDRAWAL,
-               TransactionType.DIVIDEND_INCOME, TransactionType.PENSION_INCOME, TransactionType.EARNED_INCOME]
+               TransactionType.REGULAR_DIVIDEND, TransactionType.PENSION_INCOME, TransactionType.EARNED_INCOME]
+
     for transaction in transactions:
-        if transaction["person"] == person:
-            if transaction["transaction_type"] in taxable and transaction["entry_type"] == "credit":
-                if transaction["transaction_type"] == TransactionType.SALE_OF_REGULAR_ASSET:
-                    taxable_income += (transaction["amount"] - transaction["book_value"]) * 0.5
-                elif transaction["transaction_type"] == TransactionType.DIVIDEND_INCOME:
-                    if transaction['account'] == Account.REGULAR:
-                        taxable_income += transaction["amount"]
+        if transaction.person == person:
+            if transaction.transaction_type in taxable and transaction.entry_type == "credit":
+                if transaction.transaction_type== TransactionType.SALE_OF_REGULAR_ASSET:
+                    taxable_income += (transaction.amount - transaction.book_value) * 0.5
 
                 else:
-                    taxable_income += transaction["amount"]
+                    taxable_income += transaction.amount
 
     return taxable_income
 
@@ -241,11 +236,21 @@ def generate_base_transactions(transactions, current_book, parameters):
 
 
     for person in ["client", "spouse"]:
-        for account in [Account.REGULAR, Account.RRSP, Account.RRIF, Account.TFSA]:
+
+        if (current_book[person][Account.REGULAR] > 0 and parameters["growth_rate"] > 0):
+            createTransaction(transactions,"credit", person, Account.REGULAR, round(current_book[person][Account.REGULAR] * parameters["growth_rate"],0), TransactionType.REGULAR_ASSET_GROWTH)
+        if (current_book[person][Account.REGULAR] > 0 and parameters["income_rate"] > 0):
+            createTransaction(transactions,"credit", person, Account.REGULAR, round(current_book[person][Account.REGULAR] * parameters["income_rate"],0), TransactionType.REGULAR_DIVIDEND)
+
+        for account in [Account.RRSP, Account.RRIF, Account.TFSA]:
             if (current_book[person][account] > 0 and parameters["growth_rate"] > 0):
-                createTransaction(transactions,"credit", person, account, round(current_book[person][account] * parameters["growth_rate"],0), TransactionType.ASSET_GROWTH)
+                createTransaction(transactions, "credit", person, account,
+                                  round(current_book[person][account] * parameters["growth_rate"], 0),
+                                  TransactionType.REGISTERED_ASSET_GROWTH)
             if (current_book[person][account] > 0 and parameters["income_rate"] > 0):
-                createTransaction(transactions,"credit", person, account, round(current_book[person][account] * parameters["income_rate"],0), TransactionType.DIVIDEND_INCOME)
+                createTransaction(transactions, "credit", person, account,
+                                  round(current_book[person][account] * parameters["income_rate"], 0),
+                                  TransactionType.REGISTERERD_DIVIDEND)
 
     client_tax = calculate_tax(transactions,  "client", tax_rate)
     createTransaction(transactions, "debit", "client", Account.CLEARING, client_tax, TransactionType.TAX, desc="client tax before sale of assets")

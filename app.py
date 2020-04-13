@@ -214,7 +214,7 @@ app.layout = dhc.Div([
         dhc.Button('Calculate', id='calculate_button'),
         dcc.Graph(id='plot1'),
 
-        dash_table.DataTable(id='reportxxx'),
+        dash_table.DataTable(id='reportxxx', style_table={'overflowX': 'scroll'}),
 
         dcc.Store(id="client", storage_type='memory', data=data["start_book"]["client"].copy()),
         dcc.Store(id="spouse", storage_type='memory', data=data["start_book"]["spouse"].copy()),
@@ -271,17 +271,6 @@ def update_graph(n, xxx, client, spouse, joint):
 
     joint_proj = [record['start']['joint'] for record in essential_capital_projection[:-1]]
     joint_proj.append(essential_capital_projection[-1]['end']['joint'])
-
-
-
-    transactions=[]
-
-    for i in range(len(essential_capital_projection)):
-        client_proj[i]["year"] = essential_capital_projection[i]["start"]["year"]
-        spouse_proj[i]["year"] =  essential_capital_projection[i]["start"]["year"]
-        for t in essential_capital_projection[i]["start"]["transactions"]:
-            t["year"] = essential_capital_projection[i]["start"]["year"]
-            transactions.append(t)
 
 
 

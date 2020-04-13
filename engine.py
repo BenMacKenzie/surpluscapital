@@ -305,11 +305,11 @@ def get_projection(data):
     def create_report(essential_capital_projection):
 
 
-        reporting_transactions  = ["NEEDS", "EARNED_INCOME", "PENSION_INCOME", "DIVIDEND_INCOME", "SALE_OF_REGULAR_ASSET",
+        reporting_transactions  = ["NEEDS", "EARNED_INCOME", "PENSION_INCOME", "REGULAR_DIVIDEND", "REGISTERED_DIVIDEND", "REGULAR_ASSET_GROWTH", "REGISTERED_ASSET_GROWTH", "SALE_OF_REGULAR_ASSET",
                                    "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TFSA_WITHDRAWAL", "TAX"]
 
-        spouse_reporting_transactions = ["SPOUSE_EARNED_INCOME", "SPOUSE_PENSION_INCOME", "SPOUSE_DIVIDEND_INCOME", "SPOUSE_SALE_OF_REGULAR_ASSET",
-                                   "SPOUSE_RRSP_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL", "SPOUSE_TAX" ]
+        spouse_reporting_transactions = ["SPOUSE_EARNED_INCOME", "SPOUSE_PENSION_INCOME", "SPOUSE_REGULAR_DIVIDEND", "SPOUSE_REGISTERED_DIVIDEND", "SPOUSE_REGULAR_ASSET_GROWTH", "SPOUSE_REGISTERED_ASSET_GROWTH",
+                                         "SPOUSE_SALE_OF_REGULAR_ASSET", "SPOUSE_RRSP_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL", "SPOUSE_TAX" ]
 
         if parameters["spouse"]:
             reporting_transactions += spouse_reporting_transactions
@@ -321,16 +321,16 @@ def get_projection(data):
 
         for i in range(len(essential_capital_projection)):
             for t in essential_capital_projection[i]["end"]["transactions"]:
-                t_type =  t["transaction_type"].value
-                if t["person"] == "spouse":
+                t_type =  t.transaction_type.value
+                if t.person == "spouse":
                     t_type = "SPOUSE_" + t_type
 
                 if t_type in reporting_transactions:
-                    if t_type in ["NEEDS", "TAX", "SPOUSE_TAX"]  and t["entry_type"] == "debit":
-                        df_t.iloc[i][t_type] += t["amount"]
+                    if t_type in ["NEEDS", "TAX", "SPOUSE_TAX"]  and t.entry_type == "debit":
+                        df_t.iloc[i][t_type] += t.amount
 
-                    elif  t["entry_type"] == "credit":
-                            df_t.iloc[i][t_type] += t["amount"]
+                    elif  t.entry_type == "credit":
+                            df_t.iloc[i][t_type] += t.amount
 
 
         spouse_columns = {"NON_REGISTERED_ASSET": "SPOUSE_NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE": "SPOUSE_REGULAR_BOOK_VALUE", "RRSP": "SPOUSE_RRSP", "RRIF": "SPOUSE_RRIF", "TFSA": "SPOUSE_TFSA", "year": "spouse_year"}
@@ -431,7 +431,7 @@ def get_projection(data):
 
     # reverse transactions
     for t in sc_transactions:
-        t["entry_type"] = "credit"
+        t.entry_type = "credit"
 
     #remove income requiremenrts and pensions
     parameters["income_requirements"] = 0
