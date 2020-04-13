@@ -305,12 +305,11 @@ def get_projection(data):
     def create_report(essential_capital_projection):
 
 
-        reporting_transactions  = ["EARNED_INCOME", "PENSION_INCOME", "DIVIDEND_INCOME", "SALE_OF_REGULAR_ASSET",
-                                   "RRSP_WITHDRAWAL", "RRSP_WITHDRAWAL", "TFSA_WITHDRAWAL", "SALE_OF_REGULAR_ASSET",
-                                   "NEEDS", "TAX"]
+        reporting_transactions  = ["NEEDS", "EARNED_INCOME", "PENSION_INCOME", "DIVIDEND_INCOME", "SALE_OF_REGULAR_ASSET",
+                                   "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TFSA_WITHDRAWAL", "TAX"]
 
         spouse_reporting_transactions = ["SPOUSE_EARNED_INCOME", "SPOUSE_PENSION_INCOME", "SPOUSE_DIVIDEND_INCOME", "SPOUSE_SALE_OF_REGULAR_ASSET",
-                                   "SPOUSE_RRSP_WITHDRAWAL", "SPOUSE_RRSP_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL", "SPOUSE_TAX" ]
+                                   "SPOUSE_RRSP_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL", "SPOUSE_TAX" ]
 
         if parameters["spouse"]:
             reporting_transactions += spouse_reporting_transactions

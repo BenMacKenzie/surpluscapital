@@ -43,7 +43,7 @@ def amount_of_deferred_asset_to_sell(need, starting_income, tax_rates):
     return amount
 
 
-
+#might be better to just double marginal levels, double starting income and halve the tax rates
 def amount_of_regular_asset_to_sell(need, book_value_ratio, starting_income, tax_rates):
 
     #tax rates: {"marginal": [(15,000.0.1), (30,000,0.4)], "top": 0.5}
