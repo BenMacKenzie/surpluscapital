@@ -420,6 +420,10 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
     data["charitable_donations"] = int(charitable_donations)
     data["client_age"]=int(client_age)
     data["spouse_age"] = int(spouse_age)
+
+    if int(spouse_age) == 0:
+        data["spouse"] = False
+
     data["end_year"]=int(end_year)
 
 
