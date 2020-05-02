@@ -5,109 +5,7 @@ import pandas as pd
 import numpy as np
 
 
-
-PARAMETERS = {
-        "growth_rate": 0.05,
-        "income_rate": 0.02,
-        "inflation": 0.02,
-        "start_year": 2020,
-        "client_age": 67,
-        "spouse": True,
-        "spouse_age": 63,
-        "end_year": 2044,
-        "end_balance": 100000,
-        "tax_rate": {"marginal": [(15000., 0.1), (30000, 0.4)], "top": 0.5},
-        "pensions": [
-        {"name": "client_cpp",
-         "person": "client",
-         "amount": 16000,
-         "start_year": 2022,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "spouse_cpp",
-         "person": "spouse",
-         "amount": 16000,
-         "start_year": 2022,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "client_oas",
-         "person": "client",
-         "amount": 7200,
-         "start_year": 2019,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "spouse_oas",
-         "person": "spouse",
-         "amount": 7200,
-         "start_year": 2019,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "client_pension",
-         "person": "client",
-         "amount": 0,
-         "start_year": 2019,
-         "end_year": 2043,
-         "index_rate": 0.02
-         },
-        {"name": "spouse_pension",
-         "person": "spouse",
-         "amount": 0,
-         "start_year": 2019,
-         "end_year": 2043,
-         "index_rate": 0.02
-         }
-        ],
-        "income_requirements": 140000,
-        }
-
-START_BOOK = {
-        "joint" : {Account.CLEARING: 0,
-                   Account.HOME: 0},
-        "client" : {
-            Account.REGULAR: 800000,
-            Account.REGULAR_BOOK_VALUE: 800000,
-            Account.TFSA: 1000000,
-            Account.RRSP: 0,
-            Account.RRIF: 0
-        },
-
-        "spouse": {
-            Account.REGULAR: 1000000,
-            Account.REGULAR_BOOK_VALUE: 500000,
-            Account.TFSA: 0,
-            Account.RRSP: 0,
-            Account.RRIF: 0
-        },
-
-
-}
-
-START_SURPLUS_CAPITAL_BOOK = {
-    "joint": {Account.CLEARING: 0,
-              Account.HOME: 0},
-    "client": {
-        Account.REGULAR: 0,
-        Account.REGULAR_BOOK_VALUE: 0,
-        Account.TFSA: 0,
-        Account.RRSP: 0,
-        Account.RRIF: 0
-    },
-
-    "spouse": {
-        Account.REGULAR: 0,
-        Account.REGULAR_BOOK_VALUE: 0,
-        Account.TFSA: 0,
-        Account.RRSP: 0,
-        Account.RRIF: 0
-    },
-
-}
-
-def get_projection(data):
+def get_projection(data, calculate_surplus_capital=True):
 
     start_book= data["start_book"]
     parameters = data["parameters"]
@@ -305,10 +203,10 @@ def get_projection(data):
     def create_report(essential_capital_projection):
 
 
-        reporting_transactions  = ["NEEDS", "CHARITABLE_DONATIONS", "EARNED_INCOME", "PENSION_INCOME", "REGULAR_DIVIDEND", "REGISTERED_DIVIDEND", "REGULAR_ASSET_GROWTH", "REGISTERED_ASSET_GROWTH", "SALE_OF_REGULAR_ASSET",
+        reporting_transactions  = ["NEEDS", "CHARITABLE_DONATIONS", "EARNED_INCOME", "OTHER_PENSION", "OAS", "CPP", "REGULAR_DIVIDEND", "REGISTERED_DIVIDEND", "REGULAR_ASSET_GROWTH", "REGISTERED_ASSET_GROWTH", "SALE_OF_REGULAR_ASSET",
                                    "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TFSA_WITHDRAWAL", "TAX"]
 
-        spouse_reporting_transactions = ["SPOUSE_EARNED_INCOME", "SPOUSE_PENSION_INCOME", "SPOUSE_REGULAR_DIVIDEND", "SPOUSE_REGISTERED_DIVIDEND", "SPOUSE_REGULAR_ASSET_GROWTH", "SPOUSE_REGISTERED_ASSET_GROWTH",
+        spouse_reporting_transactions = ["SPOUSE_EARNED_INCOME", "SPOUSE_OTHER_PENSION", "SPOUSE_OAS", "SPOUSE_CPP", "SPOUSE_REGULAR_DIVIDEND", "SPOUSE_REGISTERED_DIVIDEND", "SPOUSE_REGULAR_ASSET_GROWTH", "SPOUSE_REGISTERED_ASSET_GROWTH",
                                          "SPOUSE_SALE_OF_REGULAR_ASSET", "SPOUSE_RRSP_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL", "SPOUSE_TAX" ]
 
         if parameters["spouse"]:
@@ -321,7 +219,11 @@ def get_projection(data):
 
         for i in range(len(essential_capital_projection)):
             for t in essential_capital_projection[i]["end"]["transactions"]:
-                t_type =  t.transaction_type.value
+                if t.transaction_type == TransactionType.PENSION_INCOME:
+                    t_type = t.desc
+                else:
+                    t_type =  t.transaction_type.value
+
                 if t.person == "spouse":
                     t_type = "SPOUSE_" + t_type
 
@@ -364,6 +266,32 @@ def get_projection(data):
 
         df.drop(['year'], 1, inplace=True)
 
+
+        if parameters["spouse"]:
+            ordered_columns = ["EARNED_INCOME", "SPOUSE_EARNED_INCOME", "OAS",
+                               "SPOUSE_OAS", "CPP", "SPOUSE_CPP",
+                               "OTHER_PENSION","SPOUSE_OTHER_PENSION",
+                               "REGULAR_DIVIDEND",  "SPOUSE_REGULAR_DIVIDEND",
+                               "SALE_OF_REGULAR_ASSET","SPOUSE_SALE_OF_REGULAR_ASSET",
+                               "RRSP_WITHDRAWAL",  "SPOUSE_RRSP_WITHDRAWAL",
+                               "RRIF_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL",
+                               "TAX", "SPOUSE_TAX",
+                               "NEEDS", "CHARITABLE_DONATIONS",
+                               "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE", "SPOUSE_NON_REGISTERED_ASSET",  "SPOUSE_REGULAR_BOOK_VALUE",
+                               "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "TFSA", "SPOUSE_TFSA", "HOME"]
+        else:
+            ordered_columns = ["EARNED_INCOME", "OAS", "CPP", "REGULAR_DIVIDEND", "OTHER_PENSION",
+                               "SALE_OF_REGULAR_ASSET",
+                               "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TAX", "NEEDS", "CHARITABLE_DONATIONS",
+                               "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE", "SPOUSE_NON_REGISTERED_ASSET",
+                               "SPOUSE_REGULAR_BOOK_VALUE", "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "TFSA",
+                               "SPOUSE_TFSA", "HOME"]
+
+
+        df = df[ordered_columns]
+        df = df.loc[:, (df != 0).any(axis=0)]
+
+        df = df.applymap(lambda x: '{:,.0f}'.format(x))
         df = df.T
 
         df.columns = col_names

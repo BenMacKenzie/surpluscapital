@@ -194,7 +194,7 @@ def process_pensions(transactions, start_year, year, pensions):
         if pension["start_year"] <= year and pension["end_year"] >= year:
 
             pension_amount= get_future_value(start_year, year, pension["amount"], pension["index_rate"])
-            createTransaction(transactions, "credit", pension["person"], Account.CLEARING, pension_amount, TransactionType.PENSION_INCOME)
+            createTransaction(transactions, "credit", pension["person"], Account.CLEARING, pension_amount, TransactionType.PENSION_INCOME, desc=pension["name"])
 
 
 

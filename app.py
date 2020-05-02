@@ -454,7 +454,7 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
 
     if client_pension_amount != '0':
         client_pension = {}
-        client_pension["name"] = "client_pension"
+        client_pension["name"] = "OTHER_PENSION"
         client_pension["person"] = "client"
         client_pension["amount"] = int(client_pension_amount)
         client_pension["start_year"] = int(client_pension_start)
@@ -464,7 +464,7 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
 
     if client_oas_amount != '0':
         client_oas = {}
-        client_oas["name"] = "client_oas"
+        client_oas["name"] = "OAS"
         client_oas["person"] = "client"
         client_oas["amount"] = int(client_oas_amount)
         client_oas["start_year"] = int(client_oas_start)
@@ -474,7 +474,7 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
 
     if client_cpp_amount != '0':
         client_cpp = {}
-        client_cpp["name"] = "client_cpp"
+        client_cpp["name"] = "CPP"
         client_cpp["person"] = "client"
         client_cpp["amount"] = int(client_cpp_amount)
         client_cpp["start_year"] = int(client_cpp_start)
@@ -484,7 +484,7 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
 
     if spouse_pension_amount != '0':
         spouse_pension = {}
-        spouse_pension["name"] = "spouse_pension"
+        spouse_pension["name"] = "OTHER_PENSION"
         spouse_pension["person"] = "spouse"
         spouse_pension["amount"] = int(spouse_pension_amount)
         spouse_pension["start_year"] = int(spouse_pension_start)
@@ -495,7 +495,7 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
 
     if spouse_oas_amount != '0':
         spouse_oas= {}
-        spouse_oas["name"] = "spouse_oas"
+        spouse_oas["name"] = "OAS"
         spouse_oas["person"] = "spouse"
         spouse_oas["amount"] = int(spouse_oas_amount)
         spouse_oas["start_year"] = int(spouse_oas_start)
@@ -505,7 +505,7 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
 
     if spouse_cpp_amount != '0':
         spouse_pension = {}
-        spouse_pension["name"] = "spouse_cpp"
+        spouse_pension["name"] = "CPP"
         spouse_pension["person"] = "spouse"
         spouse_pension["amount"] = int(spouse_cpp_amount)
         spouse_pension["start_year"] = int(spouse_cpp_start)
