@@ -13,7 +13,7 @@ from transasctions import *
 from engine import get_projection
 
 
-app = dash.Dash('Dash Hello World')
+app = dash.Dash('Surplus Capital')
 server = app.server
 
 text_style = dict(color='#444', fontFamily='sans-serif', fontWeight=300)
@@ -32,7 +32,6 @@ data = {
         "spouse_age": 63,
         "end_year": 2044,
         "end_balance": 100000,
-       # "tax_rate":  {"marginal": [(15000., 0.1), (30000, 0.4)], "top": 0.5},
         "tax_rate":  {"marginal": [(12070, 0.0), (50000, 0.25), (90000, 0.35), (200000, 0.45)], "top": 0.54},
         "pensions": [
 
@@ -290,6 +289,7 @@ def update_graph(n, xxx, client, spouse, joint):
         go.Bar(name='surplus', x=projection["year"], y=projection["surplus"])
     ])
 
+    fig.update_layout(barmode='stack')
 
 
 

@@ -274,21 +274,74 @@ def get_projection(data, calculate_surplus_capital=True):
                                "REGULAR_DIVIDEND",  "SPOUSE_REGULAR_DIVIDEND",
                                "SALE_OF_REGULAR_ASSET","SPOUSE_SALE_OF_REGULAR_ASSET",
                                "RRSP_WITHDRAWAL",  "SPOUSE_RRSP_WITHDRAWAL",
-                               "RRIF_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL",
+                               "RRIF_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL", "total_funds_in",
                                "TAX", "SPOUSE_TAX",
                                "NEEDS", "CHARITABLE_DONATIONS",
+                               "total_funds_out",
                                "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE", "SPOUSE_NON_REGISTERED_ASSET",  "SPOUSE_REGULAR_BOOK_VALUE",
-                               "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "TFSA", "SPOUSE_TFSA", "HOME"]
+                               "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "TFSA", "SPOUSE_TFSA", "HOME", "total_assets"]
+
+
+
+            funds_in = df[["EARNED_INCOME", "SPOUSE_EARNED_INCOME", "OAS",
+                           "SPOUSE_OAS", "CPP", "SPOUSE_CPP",
+                           "OTHER_PENSION", "SPOUSE_OTHER_PENSION",
+                           "REGULAR_DIVIDEND", "SPOUSE_REGULAR_DIVIDEND",
+                           "SALE_OF_REGULAR_ASSET", "SPOUSE_SALE_OF_REGULAR_ASSET",
+                           "RRSP_WITHDRAWAL", "SPOUSE_RRSP_WITHDRAWAL",
+                           "RRIF_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL"]].sum(axis=1)
+
+            df["total_funds_in"] = funds_in
+
+            funds_out = df[[ "TAX", "SPOUSE_TAX",
+                               "NEEDS", "CHARITABLE_DONATIONS"]].sum(axis=1)
+
+            df["total_funds_out"] = funds_out
+
+
+            total_assets = df[[ "NON_REGISTERED_ASSET", "SPOUSE_NON_REGISTERED_ASSET",
+                               "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "TFSA", "SPOUSE_TFSA", "HOME"]].sum(axis=1)
+
+            df["total_assets"]=total_assets
+
+            df = df[ordered_columns]
+
         else:
             ordered_columns = ["EARNED_INCOME", "OAS", "CPP", "REGULAR_DIVIDEND", "OTHER_PENSION",
                                "SALE_OF_REGULAR_ASSET",
-                               "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TAX", "NEEDS", "CHARITABLE_DONATIONS",
+                               "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL",  "total_funds_in", "TAX", "NEEDS", "CHARITABLE_DONATIONS", "total_funds_out"
                                "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE", "SPOUSE_NON_REGISTERED_ASSET",
                                "SPOUSE_REGULAR_BOOK_VALUE", "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "TFSA",
-                               "SPOUSE_TFSA", "HOME"]
+                               "SPOUSE_TFSA", "HOME", "total_assets"]
 
 
-        df = df[ordered_columns]
+
+            funds_in = df[["EARNED_INCOME",
+                           "OAS",
+                           "CPP",
+                           "OTHER_PENSION",
+                           "REGULAR_DIVIDEND",
+                           "SALE_OF_REGULAR_ASSET",
+                           "RRSP_WITHDRAWAL",
+                           "RRIF_WITHDRAWAL"]].sum(axis=1)
+
+            df["total_funds_in"] = funds_in
+
+            funds_out = df[["TAX",
+                            "NEEDS", "CHARITABLE_DONATIONS"]].sum(axis=1)
+
+            df["funds_out"] = funds_out
+
+            total_assets = df[["NON_REGISTERED_ASSET",
+                             "RRSP",  "RRIF", "TFSA", "HOME"]].sum(axis=1)
+
+            df["total_assets"] = total_assets
+
+            df = df[ordered_columns]
+
+
+
+
         df = df.loc[:, (df != 0).any(axis=0)]
 
         df = df.applymap(lambda x: '{:,.0f}'.format(x))
@@ -357,29 +410,33 @@ def get_projection(data, calculate_surplus_capital=True):
 
     essential_capital_projection, sc_transactions = find_essential_capital(start_book)
 
+
+
     # reverse transactions
-    for t in sc_transactions:
-        t.entry_type = "credit"
+    #for t in sc_transactions:
+    #    t.entry_type = "credit"
 
     #remove income requiremenrts and pensions
-    parameters["income_requirements"] = 0
-    parameters["charitable_donations"] = 0
-    parameters["pensions"] = []
-    parameters["incomes"] = []
+    #parameters["income_requirements"] = 0
+    #parameters["charitable_donations"] = 0
+    #parameters["pensions"] = []
+    #parameters["incomes"] = []
 
 
     #project surplus capital.
-    surplus_book = process_transactions(start_surplus_capital_book, sc_transactions)
-    _, surplus_capital_projection = create_projection(surplus_book)
+    #surplus_book = process_transactions(start_surplus_capital_book, sc_transactions)
+    #_, surplus_capital_projection = create_projection(surplus_book)
+
+    _, surplus_capital_projection = create_projection(start_book)
 
     a = []
 
     for i in range(len(essential_capital_projection) - 1):
-        a.append([essential_capital_projection[i]["start"]["year"], get_capital(essential_capital_projection[i]["start"]), get_capital(surplus_capital_projection[i]["start"])])
+        a.append([essential_capital_projection[i]["start"]["year"], get_capital(essential_capital_projection[i]["start"]), get_capital(surplus_capital_projection[i]["start"])- get_capital(essential_capital_projection[i]["start"])])
 
     #report end of year for last year in projection...
     a.append([essential_capital_projection[-1]["end"]["year"], get_capital(essential_capital_projection[-1]["end"]),
-              get_capital(surplus_capital_projection[-1]["end"])])
+              get_capital(surplus_capital_projection[-1]["end"]) - get_capital(essential_capital_projection[-1]["end"]) ])
 
     report = create_report(essential_capital_projection)
     return sc_transactions, essential_capital_projection, surplus_capital_projection, pd.DataFrame(a, columns=["year", "essential", "surplus"]), report
