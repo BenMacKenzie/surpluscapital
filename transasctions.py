@@ -14,9 +14,11 @@ class TransactionType(str, Enum):
     HOME_APPRECIATION = "HOME_APPRECIATION",
     SALE_OF_REGULAR_ASSET = "SALE_OF_REGULAR_ASSET",
     RRSP_CONVERSION = "RRSP_CONVERSION",
+    LIRA_CONVERSION = "LIRA_CONVERSION",
     RRIF_WITHDRAWAL = "RRIF_WITHDRAWAL",
     RRSP_WITHDRAWAL = "RRSP_WITHDRAWAL",
     TFSA_WITHDRAWAL = "TFSA_WITHDRAWAL",
+    LIF_WITHDRAWAL = "LIF_WITHDRAWAL",
     BOOK_VALUE_ADJUSTMENT = "BOOK_VALUE_ADJUSTMENT",
     SALE_OF_HOME = "SALE_OF_HOME",
     REGULAR_ASSET_INVESTMENT = "REGULAR_ASSET_INVESTMENT",
@@ -33,6 +35,8 @@ class Account(str, Enum):
     RRSP="RRSP",
     RRIF="RRIF",
     TFSA = "TFSA",
+    LIRA="LIRA",
+    LIF="LIF",
     HOME = "HOME",
     CLEARING = "CLEARING"
 
@@ -71,6 +75,8 @@ def get_capital(book):
     total += book['client'][Account.RRIF]
     total += book['client'][Account.RRSP]
     total += book['client'][Account.TFSA]
+    total += book['client'][Account.LIRA]
+    total += book['client'][Account.LIF]
 
     if 'spouse' not in book.keys():
         return total
@@ -79,6 +85,8 @@ def get_capital(book):
     total += book['spouse'][Account.RRIF]
     total += book['spouse'][Account.RRSP]
     total += book['spouse'][Account.TFSA]
+    total += book['spouse'][Account.LIRA]
+    total += book['spouse'][Account.LIF]
 
     return total
 
@@ -153,6 +161,15 @@ def get_mandatory_rrif_withdrawals(transactions, book, age, person, tax_rate):
         createTransaction(transactions, "credit",person, Account.CLEARING, amount, TransactionType.RRIF_WITHDRAWAL, desc="mandatory rrif withdrawal")
 
 
+def get_mandatory_lif_withdrawals(transactions, book, age, person, tax_rate):
+
+    if book[person][Account.LIF] > 0 and age >= 65:
+
+        amount = book[person][Account.RRIF] * .05  #fix this
+
+        createTransaction(transactions, "debit", person, Account.RRIF, amount, TransactionType.LIF_WITHDRAWAL, desc="mandatory lif withdrawal")
+        createTransaction(transactions, "credit",person, Account.CLEARING, amount, TransactionType.LIF_WITHDRAWAL, desc="mandatory lif withdrawal")
+
 
 def sell_regular_asset(transactions, person, book, amount, tax_rate):
     income = get_taxable_income(transactions, person)
@@ -172,15 +189,20 @@ def sell_deferred(transactions, person,  account, amount, tax_rate):
     income = get_taxable_income(transactions, person)
     if account == Account.RRSP:
         transaction=TransactionType.RRSP_WITHDRAWAL
+        desc="tax on sale of rrsp"
     elif account == Account.RRIF:
         transaction = TransactionType.RRIF_WITHDRAWAL
+        desc="tax on sale of rrif"
+    elif account == Account.LIF:
+        transaction = TransactionType.LIF_WITHDRAWAL
+        desc="tax on sale of lif"
     else:
         return
 
     createTransaction(transactions, "debit", person, account, amount, transaction)
     createTransaction(transactions, "credit", person, Account.CLEARING, amount, transaction)
     tax = calculate_marginal_tax(income, amount, tax_rate)
-    createTransaction(transactions, "debit", person, Account.CLEARING, tax, TransactionType.TAX, desc="tax on sale of rrsp")
+    createTransaction(transactions, "debit", person, Account.CLEARING, tax, TransactionType.TAX, desc=desc)
 
 
 
@@ -296,6 +318,23 @@ def meet_cash_req_from_deferred(transactions, book, person, account, tax_rate):
         sell_deferred(transactions, person, account, deferred_asset_needed, tax_rate)
     else:
         sell_deferred(transactions, person, account,  book[person][account], tax_rate)
+
+
+def meet_cash_req_from_lif(transactions, book, person, tax_rate):
+    taxable_income = get_taxable_income(transactions, person)
+    needs = 0 - book['joint'][Account.CLEARING]
+
+    if book[person][Account.LIF] <= 0:
+        return
+
+    max_lif_withdrawal = book[person][Account.LIF] * 0.2 #fix this
+
+    deferred_asset_needed = amount_of_deferred_asset_to_sell(needs, taxable_income, tax_rate)
+
+    if deferred_asset_needed <= max_lif_withdrawal:
+        sell_deferred(transactions, person, Account.LIF, deferred_asset_needed, tax_rate)
+    else:
+        sell_deferred(transactions, person, Account.LIF,  max_lif_withdrawal, tax_rate)
 
 
 def meet_cash_req_from_tfsa(transactions, book, person):

@@ -46,7 +46,9 @@ data = {
             Account.REGULAR_BOOK_VALUE: 0,
             Account.TFSA: 0,
             Account.RRSP: 0,
-            Account.RRIF: 0
+            Account.RRIF: 0,
+            Account.LIF: 0,
+            Account.LIRA: 0
         },
 
         "spouse": {
@@ -54,7 +56,9 @@ data = {
             Account.REGULAR_BOOK_VALUE: 0,
             Account.TFSA: 0,
             Account.RRSP: 0,
-            Account.RRIF: 0
+            Account.RRIF: 0,
+            Account.LIF: 0,
+            Account.LIRA: 0
         }
     }
 
@@ -82,6 +86,7 @@ app.layout = dhc.Div([
             dhc.Tr([dhc.Td("RRIF: "), dhc.Td(dcc.Input(id='client_rrif_account', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_rrif_account', type='number', placeholder='0', value='0'))]),
 
             dhc.Tr([dhc.Td("RRSP: "), dhc.Td(dcc.Input(id='client_rrsp_account', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_rrsp_account', type='number', placeholder='0', value='0'))]),
+            dhc.Tr([dhc.Td("LIF: "), dhc.Td(dcc.Input(id='client_lif_account', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_lif_account', type='number', placeholder='0', value='0'))]),
 
             dhc.Tr([dhc.Td("Home"), dhc.Td(dcc.Input(id='home_value', type='number', placeholder='0', value='0')), dhc.Td(dcc.Checklist(id='sell_home', options=[{'label': 'Sell Home', 'value': 'yes'}])), dhc.Td(dcc.Input(id='sell_home_year', type='number', placeholder='0', value='0'))])
 
@@ -323,16 +328,18 @@ def update_joint(home_value, data):
                                          Input('client_tfsa_account', 'value'),
                                          Input('client_rrif_account', 'value'),
                                          Input('client_rrsp_account', 'value'),
+                                         Input('client_lif_account', 'value'),
 
                                          ],
 
                                         state=[State('client', 'data')])
-def update_client_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, data):
+def update_client_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lif, data):
     data[Account.REGULAR] = int(reg_account)
     data[Account.REGULAR_BOOK_VALUE] = int(reg_account_bv)
     data[Account.TFSA] = int(tfsa)
     data[Account.RRSP] = int(rrsp)
     data[Account.RRIF] = int(rrif)
+    data[Account.LIF] = int(lif)
 
 
     return data
@@ -344,15 +351,17 @@ def update_client_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, data):
                                          Input('spouse_regular_account_bv', 'value'),
                                          Input('spouse_tfsa_account', 'value'),
                                          Input('spouse_rrif_account', 'value'),
-                                         Input('spouse_rrsp_account', 'value')
+                                         Input('spouse_rrsp_account', 'value'),
+                                         Input('spouse_lif_account', 'value')
                                          ],
                                         state=[State('spouse', 'data')])
-def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, data):
+def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lif, data):
     data[Account.REGULAR] = int(reg_account)
     data[Account.REGULAR_BOOK_VALUE] = int(reg_account_bv)
     data[Account.TFSA] = int(tfsa)
     data[Account.RRIF] = int(rrif)
     data[Account.RRSP] = int(rrsp)
+    data[Account.LIF] = int(lif)
     return data
 
 @app.callback(Output('xxx', 'data'), [Input('end_balance', 'value'),
@@ -423,6 +432,8 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
 
     if int(spouse_age) == 0:
         data["spouse"] = False
+    else:
+        data["spouse"] = True
 
     data["end_year"]=int(end_year)
 

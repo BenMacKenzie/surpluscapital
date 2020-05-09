@@ -84,6 +84,17 @@ def get_projection(data, calculate_surplus_capital=True):
                 meet_cash_req_from_deferred(transactions, book, "spouse", Account.RRIF, parameters["tax_rate"])
                 _ = process_transactions(start_book, transactions)
 
+            # client lif
+            if book['joint'][Account.CLEARING] < 0:
+                meet_cash_req_from_lif(transactions, book, "client",  parameters["tax_rate"])
+                book = process_transactions(start_book, transactions)
+
+            # spouse lif
+            if book['joint'][Account.CLEARING] < 0:
+                meet_cash_req_from_lif(transactions, book, "spouse",  parameters["tax_rate"])
+                book = process_transactions(start_book, transactions)
+
+
 
 
         book = process_transactions(start_book, transactions)
@@ -204,10 +215,10 @@ def get_projection(data, calculate_surplus_capital=True):
 
 
         reporting_transactions  = ["NEEDS", "CHARITABLE_DONATIONS", "EARNED_INCOME", "OTHER_PENSION", "OAS", "CPP", "REGULAR_DIVIDEND", "REGISTERED_DIVIDEND", "REGULAR_ASSET_GROWTH", "REGISTERED_ASSET_GROWTH", "SALE_OF_REGULAR_ASSET",
-                                   "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TFSA_WITHDRAWAL", "TAX"]
+                                   "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TFSA_WITHDRAWAL", "LIF_WITHDRAWAL", "TAX"]
 
         spouse_reporting_transactions = ["SPOUSE_EARNED_INCOME", "SPOUSE_OTHER_PENSION", "SPOUSE_OAS", "SPOUSE_CPP", "SPOUSE_REGULAR_DIVIDEND", "SPOUSE_REGISTERED_DIVIDEND", "SPOUSE_REGULAR_ASSET_GROWTH", "SPOUSE_REGISTERED_ASSET_GROWTH",
-                                         "SPOUSE_SALE_OF_REGULAR_ASSET", "SPOUSE_RRSP_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL", "SPOUSE_TAX" ]
+                                         "SPOUSE_SALE_OF_REGULAR_ASSET", "SPOUSE_RRSP_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL", "SPOUSE_LIF_WITHDRAWAL", "SPOUSE_TAX" ]
 
         if parameters["spouse"]:
             reporting_transactions += spouse_reporting_transactions
@@ -235,7 +246,7 @@ def get_projection(data, calculate_surplus_capital=True):
                             df_t.iloc[i][t_type] += t.amount
 
 
-        spouse_columns = {"NON_REGISTERED_ASSET": "SPOUSE_NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE": "SPOUSE_REGULAR_BOOK_VALUE", "RRSP": "SPOUSE_RRSP", "RRIF": "SPOUSE_RRIF", "TFSA": "SPOUSE_TFSA", "year": "spouse_year"}
+        spouse_columns = {"NON_REGISTERED_ASSET": "SPOUSE_NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE": "SPOUSE_REGULAR_BOOK_VALUE", "RRSP": "SPOUSE_RRSP", "RRIF": "SPOUSE_RRIF", "TFSA": "SPOUSE_TFSA", "LIRA": "SPOUSE_LIRA", "LIF": "SPOUSE_LIF", "year": "spouse_year"}
 
         client_proj = [record['start']['client'] for record in essential_capital_projection[:-1]]
         client_proj.append(essential_capital_projection[-1]['end']['client'])
@@ -278,8 +289,9 @@ def get_projection(data, calculate_surplus_capital=True):
                                "TAX", "SPOUSE_TAX",
                                "NEEDS", "CHARITABLE_DONATIONS",
                                "total_funds_out",
+                               "net_funds_in",
                                "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE", "SPOUSE_NON_REGISTERED_ASSET",  "SPOUSE_REGULAR_BOOK_VALUE",
-                               "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "TFSA", "SPOUSE_TFSA", "HOME", "total_assets"]
+                               "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "LIRA", "SPOUSE_LIRA", "LIF", "SPOUSE_LIF", "TFSA", "SPOUSE_TFSA", "HOME", "total_assets"]
 
 
 
@@ -289,7 +301,8 @@ def get_projection(data, calculate_surplus_capital=True):
                            "REGULAR_DIVIDEND", "SPOUSE_REGULAR_DIVIDEND",
                            "SALE_OF_REGULAR_ASSET", "SPOUSE_SALE_OF_REGULAR_ASSET",
                            "RRSP_WITHDRAWAL", "SPOUSE_RRSP_WITHDRAWAL",
-                           "RRIF_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL"]].sum(axis=1)
+                           "RRIF_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL",
+                           "LIF_WITHDRAWAL", "SPOUSE_LIF_WITHDRAWAL"]].sum(axis=1)
 
             df["total_funds_in"] = funds_in
 
@@ -298,9 +311,11 @@ def get_projection(data, calculate_surplus_capital=True):
 
             df["total_funds_out"] = funds_out
 
+            df["net_funds_in"] = df["total_funds_in"] - df["total_funds_out"]
+
 
             total_assets = df[[ "NON_REGISTERED_ASSET", "SPOUSE_NON_REGISTERED_ASSET",
-                               "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "TFSA", "SPOUSE_TFSA", "HOME"]].sum(axis=1)
+                               "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "TFSA", "SPOUSE_TFSA", "LIRA", "SPOUSE_LIRA", "LIF", "SPOUSE_LIF", "HOME"]].sum(axis=1)
 
             df["total_assets"]=total_assets
 
@@ -309,10 +324,11 @@ def get_projection(data, calculate_surplus_capital=True):
         else:
             ordered_columns = ["EARNED_INCOME", "OAS", "CPP", "REGULAR_DIVIDEND", "OTHER_PENSION",
                                "SALE_OF_REGULAR_ASSET",
-                               "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL",  "total_funds_in", "TAX", "NEEDS", "CHARITABLE_DONATIONS", "total_funds_out"
-                               "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE", "SPOUSE_NON_REGISTERED_ASSET",
-                               "SPOUSE_REGULAR_BOOK_VALUE", "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "TFSA",
-                               "SPOUSE_TFSA", "HOME", "total_assets"]
+                               "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL",  "LIF_WITHDRAWAL", "total_funds_in", "TAX", "NEEDS", "CHARITABLE_DONATIONS", "total_funds_out",
+                               "net_funds_in",
+                               "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE",
+                               "RRSP", "RRIF", "TFSA", "LIRA", "LIF",
+                               "HOME", "total_assets"]
 
 
 
@@ -323,17 +339,20 @@ def get_projection(data, calculate_surplus_capital=True):
                            "REGULAR_DIVIDEND",
                            "SALE_OF_REGULAR_ASSET",
                            "RRSP_WITHDRAWAL",
-                           "RRIF_WITHDRAWAL"]].sum(axis=1)
+                           "RRIF_WITHDRAWAL",
+                           "LIF_WITHDRAWAL"]].sum(axis=1)
 
             df["total_funds_in"] = funds_in
 
             funds_out = df[["TAX",
                             "NEEDS", "CHARITABLE_DONATIONS"]].sum(axis=1)
 
-            df["funds_out"] = funds_out
+            df["total_funds_out"] = funds_out
+
+            df["net_funds_in"] = df["total_funds_in"] - df["total_funds_out"]
 
             total_assets = df[["NON_REGISTERED_ASSET",
-                             "RRSP",  "RRIF", "TFSA", "HOME"]].sum(axis=1)
+                             "RRSP",  "RRIF", "TFSA", "LIRA", "LIF", "HOME"]].sum(axis=1)
 
             df["total_assets"] = total_assets
 
