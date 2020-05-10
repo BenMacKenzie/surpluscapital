@@ -258,9 +258,11 @@ def generate_base_transactions(transactions, current_book, parameters):
 
     if get_age(year, parameters['start_year'], parameters['client_age']) == 71:
         rrsp_converstion_to_rrif(transactions, current_book,'client' )
+        convert_lira_to_lif(transactions, current_book, "client")
 
     if parameters["spouse"] and get_age(year, parameters['start_year'], parameters['spouse_age']) == 71:
         rrsp_converstion_to_rrif(transactions, current_book, 'spouse')
+        convert_lira_to_lif(transactions, current_book, 'spouse')
 
     if "sell_home" in parameters.keys() and parameters["sell_home"] == year:
         createTransaction(transactions, "credit", "joint", Account.CLEARING, current_book["joint"][Account.HOME], TransactionType.SALE_OF_HOME)
