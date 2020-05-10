@@ -150,6 +150,16 @@ def rrsp_converstion_to_rrif(transactions, book, person):
 
 
 
+def convert_lira_to_lif(transactions, book, person):
+
+    createTransaction(transactions, "debit", person, Account.LIRA, book[person][Account.LIRA], TransactionType.LIRA_CONVERSION, desc="lira conversion")
+    createTransaction(transactions, "credit", person, Account.LIF, book[person][Account.LIRA], TransactionType.LIRA_CONVERSION, desc="lira conversion")
+
+
+
+
+
+
 def get_mandatory_rrif_withdrawals(transactions, book, age, person, tax_rate):
 
     if book[person][Account.RRIF] > 0 and age >= 65:
@@ -320,7 +330,14 @@ def meet_cash_req_from_deferred(transactions, book, person, account, tax_rate):
         sell_deferred(transactions, person, account,  book[person][account], tax_rate)
 
 
-def meet_cash_req_from_lif(transactions, book, person, tax_rate):
+
+
+
+
+
+
+
+def meet_cash_req_from_lif(transactions, book, person, age, tax_rate):
     taxable_income = get_taxable_income(transactions, person)
     needs = 0 - book['joint'][Account.CLEARING]
 
@@ -335,6 +352,7 @@ def meet_cash_req_from_lif(transactions, book, person, tax_rate):
         sell_deferred(transactions, person, Account.LIF, deferred_asset_needed, tax_rate)
     else:
         sell_deferred(transactions, person, Account.LIF,  max_lif_withdrawal, tax_rate)
+
 
 
 def meet_cash_req_from_tfsa(transactions, book, person):

@@ -82,17 +82,40 @@ def get_projection(data, calculate_surplus_capital=True):
             # spouse rrif
             if book['joint'][Account.CLEARING] < 0:
                 meet_cash_req_from_deferred(transactions, book, "spouse", Account.RRIF, parameters["tax_rate"])
-                _ = process_transactions(start_book, transactions)
+                book = process_transactions(start_book, transactions)
 
             # client lif
+
+            client_age = get_age(parameters["client_age"], parameters["start_year"], year)
+            spouse_age = get_age(parameters["spouse_age"], parameters["start_year"], year)
+
             if book['joint'][Account.CLEARING] < 0:
-                meet_cash_req_from_lif(transactions, book, "client",  parameters["tax_rate"])
+                meet_cash_req_from_lif(transactions, book, "client", client_age, parameters["tax_rate"])
                 book = process_transactions(start_book, transactions)
 
             # spouse lif
+
             if book['joint'][Account.CLEARING] < 0:
-                meet_cash_req_from_lif(transactions, book, "spouse",  parameters["tax_rate"])
+                meet_cash_req_from_lif(transactions, book, "spouse",  spouse_age, parameters["tax_rate"])
                 book = process_transactions(start_book, transactions)
+
+            #last resort..convert LIRA to LIF
+
+
+
+            if book['joint'][Account.CLEARING] < 0:
+                if client_age >= 55 and book["client"][Account.LIRA] > 0:
+                    convert_lira_to_lif(transactions, book, "client")
+                    book = process_transactions(start_book, transactions)
+                    meet_cash_req_from_lif(transactions, book, "client", client_age, parameters["tax_rate"])
+                    book = process_transactions(start_book, transactions)
+
+            if book['joint'][Account.CLEARING] < 0:
+                if spouse_age >= 55 and book["spouse"][Account.LIRA] > 0:
+                    convert_lira_to_lif(transactions, book, "spouse")
+                    book = process_transactions(start_book, transactions)
+                    meet_cash_req_from_lif(transactions, book, "spouse", client_age, parameters["tax_rate"])
+                    book = process_transactions(start_book, transactions)
 
 
 
