@@ -287,7 +287,7 @@ def generate_base_transactions(transactions, current_book, parameters):
         if (current_book[person][Account.REGULAR] > 0 and parameters["income_rate"] > 0):
             createTransaction(transactions,"credit", person, Account.REGULAR, round(current_book[person][Account.REGULAR] * parameters["income_rate"],0), TransactionType.REGULAR_DIVIDEND)
 
-        for account in [Account.RRSP, Account.RRIF, Account.TFSA]:
+        for account in [Account.RRSP, Account.RRIF, Account.TFSA, Account.LIRA, Account.LIF]:
             if (current_book[person][account] > 0 and parameters["growth_rate"] > 0):
                 createTransaction(transactions, "credit", person, account,
                                   round(current_book[person][account] * parameters["growth_rate"], 0),
