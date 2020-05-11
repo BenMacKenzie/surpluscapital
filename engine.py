@@ -310,13 +310,20 @@ def get_projection(data, calculate_surplus_capital=True):
                                "RRSP_WITHDRAWAL",  "SPOUSE_RRSP_WITHDRAWAL",
                                "RRIF_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL",
                                "LIF_WITHDRAWAL", "SPOUSE_LIF_WITHDRAWAL",
+                               "TFSA_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL",
                                "total_funds_in",
                                "TAX", "SPOUSE_TAX",
                                "NEEDS", "CHARITABLE_DONATIONS",
                                "total_funds_out",
                                "net_funds_in",
-                               "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE", "SPOUSE_NON_REGISTERED_ASSET",  "SPOUSE_REGULAR_BOOK_VALUE",
-                               "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "LIRA", "SPOUSE_LIRA", "LIF", "SPOUSE_LIF", "TFSA", "SPOUSE_TFSA", "HOME", "total_assets"]
+                               "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE",
+                               "SPOUSE_NON_REGISTERED_ASSET",  "SPOUSE_REGULAR_BOOK_VALUE",
+                               "RRSP", "SPOUSE_RRSP",
+                               "RRIF", "SPOUSE_RRIF",
+                               "LIRA", "SPOUSE_LIRA",
+                               "LIF",  "SPOUSE_LIF",
+                               "TFSA", "SPOUSE_TFSA",
+                               "HOME", "total_assets"]
 
 
 
@@ -327,7 +334,8 @@ def get_projection(data, calculate_surplus_capital=True):
                            "SALE_OF_REGULAR_ASSET", "SPOUSE_SALE_OF_REGULAR_ASSET",
                            "RRSP_WITHDRAWAL", "SPOUSE_RRSP_WITHDRAWAL",
                            "RRIF_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL",
-                           "LIF_WITHDRAWAL", "SPOUSE_LIF_WITHDRAWAL"]].sum(axis=1)
+                           "LIF_WITHDRAWAL", "SPOUSE_LIF_WITHDRAWAL",
+                           "TFSA_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL"]].sum(axis=1)
 
             df["total_funds_in"] = funds_in
 
@@ -349,7 +357,9 @@ def get_projection(data, calculate_surplus_capital=True):
         else:
             ordered_columns = ["EARNED_INCOME", "OAS", "CPP", "REGULAR_DIVIDEND", "OTHER_PENSION",
                                "SALE_OF_REGULAR_ASSET",
-                               "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL",  "LIF_WITHDRAWAL", "total_funds_in", "TAX", "NEEDS", "CHARITABLE_DONATIONS", "total_funds_out",
+                               "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL",
+                               "LIF_WITHDRAWAL", "TFSA_WITHDRAWAL",
+                               "total_funds_in", "TAX", "NEEDS", "CHARITABLE_DONATIONS", "total_funds_out",
                                "net_funds_in",
                                "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE",
                                "RRSP", "RRIF", "TFSA", "LIRA", "LIF",
@@ -365,7 +375,8 @@ def get_projection(data, calculate_surplus_capital=True):
                            "SALE_OF_REGULAR_ASSET",
                            "RRSP_WITHDRAWAL",
                            "RRIF_WITHDRAWAL",
-                           "LIF_WITHDRAWAL"]].sum(axis=1)
+                           "LIF_WITHDRAWAL",
+                           "TFSA_WITHDRAWAL"]].sum(axis=1)
 
             df["total_funds_in"] = funds_in
 
