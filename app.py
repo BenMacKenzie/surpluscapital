@@ -31,7 +31,7 @@ data = {
         "spouse": True,
         "spouse_age": 63,
         "end_year": 2044,
-        "end_balance": 100000,
+        "end_balance": 0,
         "tax_rate":  {"marginal": [(12070, 0.0), (50000, 0.25), (90000, 0.35), (200000, 0.45)], "top": 0.54},
         "pensions": [
 
@@ -79,7 +79,7 @@ app.layout = dhc.Div([
                     dhc.Td(dcc.Input(id='client_age', type='number', placeholder='0', value='65')),
                     dhc.Td(dcc.Input(id='spouse_age', type='number', placeholder='0', value='65'))]),
 
-            dhc.Tr([dhc.Td("Regular Asset: "), dhc.Td(dcc.Input(id='client_regular_account',type='number', placeholder='0', value='100000')), dhc.Td(dcc.Input(id='spouse_regular_account',type='number', placeholder='0', value='0'))]),
+            dhc.Tr([dhc.Td("Regular Asset: "), dhc.Td(dcc.Input(id='client_regular_account',type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_regular_account',type='number', placeholder='0', value='0'))]),
             dhc.Tr([dhc.Td("Regular Asset Book Value: "), dhc.Td(dcc.Input(id='client_regular_account_bv', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_regular_account_bv', type='number', placeholder='0', value='0'))]),
 
             dhc.Tr([dhc.Td("TFSA: "), dhc.Td(dcc.Input(id='client_tfsa_account', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_tfsa_account', type='number', placeholder='0', value='0'))]),

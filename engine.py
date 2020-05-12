@@ -323,7 +323,7 @@ def get_projection(data, calculate_surplus_capital=True):
                                "LIRA", "SPOUSE_LIRA",
                                "LIF",  "SPOUSE_LIF",
                                "TFSA", "SPOUSE_TFSA",
-                               "HOME", "total_assets"]
+                               "HOME", "CLEARING", "total_assets"]
 
 
 
@@ -348,7 +348,7 @@ def get_projection(data, calculate_surplus_capital=True):
 
 
             total_assets = df[[ "NON_REGISTERED_ASSET", "SPOUSE_NON_REGISTERED_ASSET",
-                               "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "TFSA", "SPOUSE_TFSA", "LIRA", "SPOUSE_LIRA", "LIF", "SPOUSE_LIF", "HOME"]].sum(axis=1)
+                               "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "TFSA", "SPOUSE_TFSA", "LIRA", "SPOUSE_LIRA", "LIF", "SPOUSE_LIF", "CLEARING", "HOME"]].sum(axis=1)
 
             df["total_assets"]=total_assets
 
@@ -363,7 +363,7 @@ def get_projection(data, calculate_surplus_capital=True):
                                "net_funds_in",
                                "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE",
                                "RRSP", "RRIF", "TFSA", "LIRA", "LIF",
-                               "HOME", "total_assets"]
+                               "HOME", "CLEARING", "total_assets"]
 
 
 
@@ -388,7 +388,7 @@ def get_projection(data, calculate_surplus_capital=True):
             df["net_funds_in"] = df["total_funds_in"] - df["total_funds_out"]
 
             total_assets = df[["NON_REGISTERED_ASSET",
-                             "RRSP",  "RRIF", "TFSA", "LIRA", "LIF", "HOME"]].sum(axis=1)
+                             "RRSP",  "RRIF", "TFSA", "LIRA", "LIF", "HOME", "CLEARING"]].sum(axis=1)
 
             df["total_assets"] = total_assets
 
@@ -493,7 +493,7 @@ def get_projection(data, calculate_surplus_capital=True):
     a.append([essential_capital_projection[-1]["end"]["year"], get_capital(essential_capital_projection[-1]["end"]),
               get_capital(surplus_capital_projection[-1]["end"]) - get_capital(essential_capital_projection[-1]["end"]) ])
 
-    report = create_report(essential_capital_projection)
+    report = create_report(surplus_capital_projection)
     return sc_transactions, essential_capital_projection, surplus_capital_projection, pd.DataFrame(a, columns=["year", "essential", "surplus"]), report
 
 
