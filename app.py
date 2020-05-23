@@ -74,6 +74,7 @@ app.layout = dhc.Div([
 
 
         dhc.Table([
+            dhc.Tr([dhc.Td("Plan Type"), dhc.Td(dcc.Dropdown('plan_type', options=[{'label': 'joint', 'value': 'joint'}, {'label': 'client', 'value': 'client'}], value='joint'))]),
             dhc.Tr([dhc.Td(""), dhc.Td("client"), dhc.Td("spouse")]),
             dhc.Tr([dhc.Td("Age: "),
                     dhc.Td(dcc.Input(id='client_age', type='number', placeholder='0', value='65')),
@@ -108,7 +109,7 @@ dhc.Table([
                                              {'label': '4%', 'value': '0.04'},
                                              {'label': '5%', 'value': '0.05'},
                                              ], value='0.02'))]),
-        dhc.Tr([dhc.Td("spouse: "),
+        dhc.Tr([dhc.Td("spouse:"),
                 dhc.Td(dcc.Input(id='spouse_income_amount', type='number', placeholder='0', value='0')),
                 dhc.Td(dcc.Input(id='spouse_income_start_year', type='number', placeholder='0', value='0')),
                 dhc.Td(dcc.Input(id='spouse_income_end_year', type='number', placeholder='0', value='0')),
@@ -271,6 +272,36 @@ dhc.Table([
 
 
     ])
+spouse_fields = ["spouse_age", "spouse_regular_account", "spouse_regular_account_bv", "spouse_tfsa_account", "spouse_rrsp_account", "spouse_rrif_account", "spouse_lira_account", "spouse_lif_account",
+                 "spouse_income_amount", "spouse_income_start_year", "spouse_income_end_year", "spouse_income_index",
+                                      'spouse_pension_amount',
+                                      'spouse_pension_start_year',
+                                      'spouse_pension_end_year',
+                                      'spouse_pension_index',
+                                      'spouse_oas_amount',
+                                      'spouse_oas_start_year',
+                                      'spouse_oas_end_year',
+                                      'spouse_oas_index',
+                                      'spouse_cpp_amount',
+                                      'spouse_cpp_start_year',
+                                      'spouse_cpp_end_year',
+                                      'spouse_cpp_index']
+
+
+sf_o = [Output(s, "disabled") for s in spouse_fields]
+
+#@app.callback(
+#    [Output("spouse_age", "style")], [Input("plan_type", "value")])
+
+@app.callback(sf_o,  [Input("plan_type", "value")]
+)
+def update_plan_type(plantype):
+    if plantype == "joint":
+ #       return [{'display': 'inline'} for _ in spouse_fields]
+        return [False for _ in spouse_fields]
+    else:
+        return [True  for _ in spouse_fields]
+  #      return [{'display': 'none'} for _ in spouse_fields]
 
 
 
@@ -287,6 +318,9 @@ def update_graph(n, xxx, client, spouse, joint):
     d["start_book"]["client"] = client
     d["start_book"]["spouse"] = spouse
     d["start_book"]["joint"] = joint
+
+
+
 
 
     sc_transactions, essential_capital_projection, surplus_capital_projection, projection, report = get_projection(d)
@@ -412,7 +446,8 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lira, lif,
                                       Input('spouse_cpp_end_year', 'value'),
                                       Input('spouse_cpp_index', 'value'),
                                       Input('sell_home', 'value'),
-                                      Input('sell_home_year', 'value')
+                                      Input('sell_home_year', 'value'),
+                                      Input("plan_type", 'value')
 
                                       ], state=[State('xxx', 'data')])
 def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income_requirements, charitable_donations,
@@ -425,7 +460,7 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
                        spouse_pension_amount, spouse_pension_start, spouse_pension_end, spouse_pension_index,
                        spouse_oas_amount, spouse_oas_start, spouse_oas_end, spouse_oas_index,
                        spouse_cpp_amount, spouse_cpp_start, spouse_cpp_end, spouse_cpp_index,
-                       sell_home, sell_home_year,
+                       sell_home, sell_home_year, plan_type,
                        data):
     data["end_balance"]= int(balance)
     data["growth_rate"] = float(growth_rate)
@@ -436,7 +471,7 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
     data["client_age"]=int(client_age)
     data["spouse_age"] = int(spouse_age)
 
-    if int(spouse_age) == 0:
+    if plan_type == "client":
         data["spouse"] = False
     else:
         data["spouse"] = True

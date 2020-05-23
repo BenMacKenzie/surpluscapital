@@ -9,7 +9,13 @@ def get_projection(data, calculate_surplus_capital=True):
 
     start_book= data["start_book"]
     parameters = data["parameters"]
-    start_surplus_capital_book =  {
+
+    if not parameters["spouse"]:
+        for i in start_book["spouse"]:
+            start_book["spouse"][i]=0
+
+
+    """start_surplus_capital_book =  {
         "joint": {Account.CLEARING: 0,
                   Account.HOME: 0},
         "client": {
@@ -29,7 +35,10 @@ def get_projection(data, calculate_surplus_capital=True):
         }
     }
 
+    
     start_surplus_capital_book['year'] = parameters["start_year"]
+    """
+
     start_book["year"]=parameters["start_year"]
 
 
