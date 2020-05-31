@@ -1,8 +1,17 @@
 
 from enum import Enum
 import copy
+import pandas as pd
+import os
+
 
 from tax import amount_of_deferred_asset_to_sell, amount_of_regular_asset_to_sell, _calculate_tax, calculate_marginal_tax
+
+dir = os.path.dirname(__file__)
+fn = os.path.join(dir, 'LIF_withdrawal_rates.csv')
+lif_withdrawal = pd.read_csv(fn)
+
+
 
 class TransactionType(str, Enum):
     EARNED_INCOME = "EARNED_INCOME",
@@ -173,9 +182,10 @@ def get_mandatory_rrif_withdrawals(transactions, book, age, person, tax_rate):
 
 def get_mandatory_lif_withdrawals(transactions, book, age, person, tax_rate):
 
-    if book[person][Account.LIF] > 0 and age >= 65:
+    if book[person][Account.LIF] > 0 and age >= 50:
 
-        amount = book[person][Account.RRIF] * .05  #fix this
+        rate =  lif_withdrawal.loc[lif_withdrawal['AGE']==age].iloc[0]['MINIMUM']
+        amount = book[person][Account.RRIF] * rate  #fix this
 
         createTransaction(transactions, "debit", person, Account.RRIF, amount, TransactionType.LIF_WITHDRAWAL, desc="mandatory lif withdrawal")
         createTransaction(transactions, "credit",person, Account.CLEARING, amount, TransactionType.LIF_WITHDRAWAL, desc="mandatory lif withdrawal")
@@ -285,7 +295,7 @@ def generate_base_transactions(transactions, current_book, parameters):
         if (current_book[person][Account.REGULAR] > 0 and parameters["growth_rate"] > 0):
             createTransaction(transactions,"credit", person, Account.REGULAR, round(current_book[person][Account.REGULAR] * parameters["growth_rate"],0), TransactionType.REGULAR_ASSET_GROWTH)
         if (current_book[person][Account.REGULAR] > 0 and parameters["income_rate"] > 0):
-            createTransaction(transactions,"credit", person, Account.REGULAR, round(current_book[person][Account.REGULAR] * parameters["income_rate"],0), TransactionType.REGULAR_DIVIDEND)
+            createTransaction(transactions,"credit", person, Account.CLEARING, round(current_book[person][Account.REGULAR] * parameters["income_rate"],0), TransactionType.REGULAR_DIVIDEND)
 
         for account in [Account.RRSP, Account.RRIF, Account.TFSA, Account.LIRA, Account.LIF]:
             if (current_book[person][account] > 0 and parameters["growth_rate"] > 0):
@@ -302,29 +312,44 @@ def generate_base_transactions(transactions, current_book, parameters):
     spouse_tax = calculate_tax(transactions, "spouse", tax_rate)
     createTransaction(transactions, "debit", "spouse", Account.CLEARING, spouse_tax, TransactionType.TAX, desc="spouse tax before sale of assets")
 
-def meet_cash_req_from_regular_asset(transactions, book, person, tax_rate):
+def meet_cash_req_from_regular_asset(transactions, book, person, tax_rate, needs, income_limit=0):
 
     taxable_income = get_taxable_income(transactions, person)
-    needs = 0 - book['joint'][Account.CLEARING]
+    #needs = 0 - book['joint'][Account.CLEARING]
     if book[person][Account.REGULAR] <= 0:
         return
     book_value_ratio =  (book[person][Account.REGULAR] - book[person][Account.REGULAR_BOOK_VALUE]) / book[person][Account.REGULAR]
 
     regular_asset_needed = amount_of_regular_asset_to_sell(needs, book_value_ratio, taxable_income, tax_rate)
+
+    if income_limit > 0:
+        if taxable_income >= income_limit:
+            return #do nothing
+        if regular_asset_needed * book_value_ratio + taxable_income > income_limit:
+            regular_asset_needed = (income_limit - taxable_income) / book_value_ratio
+
+
     if regular_asset_needed <= book[person][Account.REGULAR]:
         sell_regular_asset(transactions, person, book, regular_asset_needed, tax_rate)
     else:
         sell_regular_asset(transactions, person, book, book[person][Account.REGULAR], tax_rate)
 
 
-def meet_cash_req_from_deferred(transactions, book, person, account, tax_rate):
+def meet_cash_req_from_deferred(transactions, book, person, account, tax_rate, needs, income_limit=0):
     taxable_income = get_taxable_income(transactions, person)
-    needs = 0 - book['joint'][Account.CLEARING]
+    #needs = 0 - book['joint'][Account.CLEARING]
 
     if book[person][account] <= 0:
         return
 
     deferred_asset_needed = amount_of_deferred_asset_to_sell(needs, taxable_income, tax_rate)
+
+    if income_limit > 0:
+        if taxable_income > income_limit:
+            return
+        if deferred_asset_needed + taxable_income > income_limit:
+            deferred_asset_needed = income_limit - taxable_income
+
 
     if deferred_asset_needed <= book[person][account]:
         sell_deferred(transactions, person, account, deferred_asset_needed, tax_rate)
@@ -332,23 +357,23 @@ def meet_cash_req_from_deferred(transactions, book, person, account, tax_rate):
         sell_deferred(transactions, person, account,  book[person][account], tax_rate)
 
 
-
-
-
-
-
-
-
-def meet_cash_req_from_lif(transactions, book, person, age, tax_rate):
+def meet_cash_req_from_lif(transactions, book, person, age, tax_rate, needs, income_limit):
     taxable_income = get_taxable_income(transactions, person)
-    needs = 0 - book['joint'][Account.CLEARING]
+    #needs = 0 - book['joint'][Account.CLEARING]
 
     if book[person][Account.LIF] <= 0:
         return
 
-    max_lif_withdrawal = book[person][Account.LIF] * 0.2 #fix this
+    rate = lif_withdrawal.loc[lif_withdrawal['AGE'] == age].iloc[0]['MAXIMUM_ONTARIO']
+    max_lif_withdrawal = book[person][Account.LIF] * rate
 
     deferred_asset_needed = amount_of_deferred_asset_to_sell(needs, taxable_income, tax_rate)
+
+    if income_limit > 0:
+        if taxable_income > income_limit:
+            return
+        if deferred_asset_needed + taxable_income > income_limit:
+            deferred_asset_needed = income_limit - taxable_income
 
     if deferred_asset_needed <= max_lif_withdrawal:
         sell_deferred(transactions, person, Account.LIF, deferred_asset_needed, tax_rate)
@@ -357,12 +382,16 @@ def meet_cash_req_from_lif(transactions, book, person, age, tax_rate):
 
 
 
-def meet_cash_req_from_tfsa(transactions, book, person):
+def meet_cash_req_from_tfsa(transactions, book, person, needs, income_limit):
 
-    needs = 0 - book['joint'][Account.CLEARING]
+    taxable_income = get_taxable_income(transactions, person)
 
     if book[person][Account.TFSA] <= 0:
         return
+
+    if income_limit > 0 and taxable_income >= income_limit:
+        return
+
 
     if needs <= book[person][Account.TFSA]:
         sell_tfsa(transactions, person, needs)
