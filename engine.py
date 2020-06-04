@@ -61,7 +61,7 @@ def get_projection(data, calculate_surplus_capital=True):
 
 
 
-
+    #could use the state of book after processing base transactions and empty transactions.
     def sell_assets_to_meet_needs_strategy_1_w_spouse(transactions, start_book, year):
 
         OAS_CLAWBACK = 78000
@@ -74,31 +74,9 @@ def get_projection(data, calculate_surplus_capital=True):
 
         target = needs / 2
 
-        liquidate_in_order(transactions, start_book, "client", client_age, parameters["tax_rate"], OAS_CLAWBACK, target, [Account.TFSA, Account.REGULAR, Account.RRIF,  Account.RRSP, Account.LIF, Account.LIRA])
-        liquidate_in_order(transactions, start_book, "spouse", spouse_age, parameters["tax_rate"], OAS_CLAWBACK, target, [Account.TFSA, Account.REGULAR, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
-
-        book = process_transactions(start_book, transactions)
-
-        if book['joint'][Account.CLEARING] >= 0:
-            return
-
-        needs = 0 - book['joint'][Account.CLEARING]
-        target = needs
-
-        liquidate_in_order(transactions, start_book, "client", client_age, parameters["tax_rate"], OAS_CLAWBACK, target, [Account.TFSA, Account.REGULAR, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
-        liquidate_in_order(transactions, start_book, "spouse", spouse_age, parameters["tax_rate"], OAS_CLAWBACK, target,  [Account.TFSA, Account.REGULAR, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
-
-        book = process_transactions(start_book, transactions)
-
-        if book['joint'][Account.CLEARING] >= 0:
-            return
-
-        needs = 0 - book['joint'][Account.CLEARING]
-        target = needs / 2
-
-        liquidate_in_order(transactions, start_book, "client", client_age, parameters["tax_rate"], 0, target, [Account.TFSA, Account.REGULAR, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
-        liquidate_in_order(transactions, start_book, "spouse", spouse_age, parameters["tax_rate"], 0, target, [Account.TFSA, Account.REGULAR, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+        liquidate_in_order(transactions, start_book, "client", client_age, parameters["tax_rate"], 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+        liquidate_in_order(transactions, start_book, "spouse", spouse_age, parameters["tax_rate"], 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
         book = process_transactions(start_book, transactions)
 
@@ -108,7 +86,7 @@ def get_projection(data, calculate_surplus_capital=True):
         needs = 0 - book['joint'][Account.CLEARING]
         target = needs
 
-        liquidate_in_order(transactions, start_book, "client", client_age, parameters["tax_rate"], 0, target, [Account.TFSA, Account.REGULAR, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+        liquidate_in_order(transactions, start_book, "client", client_age, parameters["tax_rate"], 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
         book = process_transactions(start_book, transactions)
 
@@ -118,7 +96,7 @@ def get_projection(data, calculate_surplus_capital=True):
         needs = 0 - book['joint'][Account.CLEARING]
         target = needs
 
-        liquidate_in_order(transactions, start_book, "spouse", spouse_age, parameters["tax_rate"], 0, target, [Account.TFSA, Account.REGULAR, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+        liquidate_in_order(transactions, start_book, "spouse", spouse_age, parameters["tax_rate"], 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
 
         return
@@ -133,7 +111,7 @@ def get_projection(data, calculate_surplus_capital=True):
         client_age = get_age(parameters["client_age"], parameters["start_year"], year)
 
         liquidate_in_order(transactions, book, "client", client_age, ["tax_rate"], 0, target,
-                           [Account.TFSA, Account.REGULAR, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+                           [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
         return
 
