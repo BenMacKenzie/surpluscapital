@@ -320,7 +320,7 @@ def update_graph(n, xxx, client, spouse, joint):
     d["start_book"]["joint"] = joint
 
 
-
+   #catch exdception here...
 
 
     sc_transactions, essential_capital_projection, surplus_capital_projection, projection, report = get_projection(d)
