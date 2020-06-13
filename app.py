@@ -250,10 +250,12 @@ dhc.Table([
 
 
 
+
         dhc.Button('Calculate', id='calculate_button'),
         dcc.Graph(id='plot1'),
 
         dash_table.DataTable(id='reportxxx', style_table={'overflowX': 'scroll'}),
+        dhc.Div(id='my-div'),
 
         dcc.Store(id="client", storage_type='memory', data=data["start_book"]["client"].copy()),
         dcc.Store(id="spouse", storage_type='memory', data=data["start_book"]["spouse"].copy()),
@@ -310,10 +312,10 @@ def update_plan_type(plantype):
 
 @app.callback(
     [Output("plot1", "figure"), Output("reportxxx", "columns"),
-     Output("reportxxx", "data")], [Input("calculate_button", "n_clicks")],
+     Output("reportxxx", "data"), Output("my-div", "children")], [Input("calculate_button", "n_clicks")],
     state=[State('xxx', 'data'), State('client', 'data'), State('spouse', 'data'), State('joint', 'data')])
 def update_graph(n, xxx, client, spouse, joint):
-
+    myexceptions = "Errors: "
     d = {}
     d["parameters"] = xxx
     d["start_book"] = {}
@@ -322,17 +324,21 @@ def update_graph(n, xxx, client, spouse, joint):
     d["start_book"]["joint"] = joint
 
 
+   #catch exdception here...
 
+    try:
+        sc_transactions, essential_capital_projection, surplus_capital_projection, projection, report = get_projection(d)
 
+        fig = go.Figure(data=[
+            go.Bar(name='essential', x=projection["year"], y=projection["essential"]),
+            go.Bar(name='surplus', x=projection["year"], y=projection["surplus"])
+        ])
 
-    sc_transactions, essential_capital_projection, surplus_capital_projection, projection, report = get_projection(d)
+        fig.update_layout(barmode='stack')
 
-    fig = go.Figure(data=[
-        go.Bar(name='essential', x=projection["year"], y=projection["essential"]),
-        go.Bar(name='surplus', x=projection["year"], y=projection["surplus"])
-    ])
-
-    fig.update_layout(barmode='stack')
+    except Exception as e:
+        myexceptions = myexceptions + str(e)
+        return None, None, None, myexceptions
 
 
 
@@ -349,7 +355,7 @@ def update_graph(n, xxx, client, spouse, joint):
 
     report_column_names = [{"name": i, "id": i} for i in report.columns]
 
-    return (fig, report_column_names, report.to_dict("records"))
+    return fig, report_column_names, report.to_dict("records"), "No errors!"
 
 
 
