@@ -27,16 +27,18 @@ data = {
         "income_rate": 0.02,
         "inflation": 0.02,
         "start_year": 2020,
-        "client_age": 67,
+        "client_age": 65,
         "spouse": True,
-        "spouse_age": 63,
+        "spouse_age": 65,
         "end_year": 2044,
         "end_balance": 0,
         "tax_rate":  {"marginal": [(12070, 0.0), (50000, 0.25), (90000, 0.35), (200000, 0.45)], "top": 0.54},
         "pensions": [
 
         ],
+        "incomes": [],
         "income_requirements": 0,
+        "charitable_donations": 0,
         },
     "start_book":  {
         "joint" : {Account.CLEARING: 0,
