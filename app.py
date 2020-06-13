@@ -252,10 +252,13 @@ dhc.Table([
 
 
         dhc.Button('Calculate', id='calculate_button'),
+
+        dhc.Div(id='error'),
+
         dcc.Graph(id='plot1'),
 
         dash_table.DataTable(id='reportxxx', style_table={'overflowX': 'scroll'}),
-        dhc.Div(id='my-div'),
+
 
         dcc.Store(id="client", storage_type='memory', data=data["start_book"]["client"].copy()),
         dcc.Store(id="spouse", storage_type='memory', data=data["start_book"]["spouse"].copy()),
@@ -312,7 +315,7 @@ def update_plan_type(plantype):
 
 @app.callback(
     [Output("plot1", "figure"), Output("reportxxx", "columns"),
-     Output("reportxxx", "data"), Output("my-div", "children")], [Input("calculate_button", "n_clicks")],
+     Output("reportxxx", "data"), Output("error", "children")], [Input("calculate_button", "n_clicks")],
     state=[State('xxx', 'data'), State('client', 'data'), State('spouse', 'data'), State('joint', 'data')])
 def update_graph(n, xxx, client, spouse, joint):
     myexceptions = "Errors: "
@@ -355,7 +358,7 @@ def update_graph(n, xxx, client, spouse, joint):
 
     report_column_names = [{"name": i, "id": i} for i in report.columns]
 
-    return fig, report_column_names, report.to_dict("records"), "No errors!"
+    return fig, report_column_names, report.to_dict("records"), ""
 
 
 
