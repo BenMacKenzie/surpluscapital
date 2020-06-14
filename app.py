@@ -37,6 +37,7 @@ data = {
 
         ],
         "incomes": [],
+        "pli": [],
         "income_requirements": 0,
         "charitable_donations": 0,
         },
@@ -210,6 +211,24 @@ dhc.Table([
 
 
 
+    dhc.Table([
+        dhc.Tr([dhc.Td("permanent life insurance"), dhc.Td("amount"), dhc.Td("payout year")]),
+        dhc.Tr([dhc.Td("client: "),
+                dhc.Td(dcc.Input(id='client_pli_amount', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='client_pli_year', type='number', placeholder='0', value='0')),
+
+              ]),
+        dhc.Tr([dhc.Td("spouse: "),
+                dhc.Td(dcc.Input(id='spouse_pli_amount', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='spouse_pli_year', type='number', placeholder='0', value='0')),
+
+                ]),
+       ]),
+
+
+
+
+
     dhc.Div(),
 
         dhc.Table([
@@ -266,21 +285,13 @@ dhc.Table([
         dcc.Store(id="xxx", storage_type='memory', data=data["parameters"]),
 
 
-#        dhc.Div("Transation Detail"),
-
-#        dash_table.DataTable(id='transaction_detail', columns=[{"name": "year", "id": "year"},
-#                                                               {"name": "person", "id": "person"},
-#                                                               {"name": "entry_type", "id": "entry_type"},
-#                                                               {"name": "account", "id": "account"},
-#                                                               {"name": "amount", "id": "amount"},
-#                                                               {"name": "transaction_type", "id": "transaction_type"},
-#                                                               {"name": "desc", "id": "desc"}
-#                                            ]),
 
 
     ])
 spouse_fields = ["spouse_age", "spouse_regular_account", "spouse_regular_account_bv", "spouse_tfsa_account", "spouse_rrsp_account", "spouse_rrif_account", "spouse_lira_account", "spouse_lif_account",
                  "spouse_income_amount", "spouse_income_start_year", "spouse_income_end_year", "spouse_income_index",
+                                      'spouse_pli_amount',
+                                      'spouse_pli_year',
                                       'spouse_pension_amount',
                                       'spouse_pension_start_year',
                                       'spouse_pension_end_year',
@@ -297,8 +308,6 @@ spouse_fields = ["spouse_age", "spouse_regular_account", "spouse_regular_account
 
 sf_o = [Output(s, "disabled") for s in spouse_fields]
 
-#@app.callback(
-#    [Output("spouse_age", "style")], [Input("plan_type", "value")])
 
 @app.callback(sf_o,  [Input("plan_type", "value")]
 )
@@ -428,6 +437,8 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lira, lif,
                                       Input('client_income_start_year', 'value'),
                                       Input('client_income_end_year', 'value'),
                                       Input('client_income_index', 'value'),
+                                      Input('client_pli_amount', 'value'),
+                                      Input('client_pli_year', 'value'),
                                       Input('client_pension_amount', 'value'),
                                       Input('client_pension_start_year', 'value'),
                                       Input('client_pension_end_year', 'value'),
@@ -444,6 +455,8 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lira, lif,
                                       Input('spouse_income_start_year', 'value'),
                                       Input('spouse_income_end_year', 'value'),
                                       Input('spouse_income_index', 'value'),
+                                      Input('spouse_pli_amount', 'value'),
+                                      Input('spouse_pli_year', 'value'),
                                       Input('spouse_pension_amount', 'value'),
                                       Input('spouse_pension_start_year', 'value'),
                                       Input('spouse_pension_end_year', 'value'),
@@ -464,10 +477,12 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lira, lif,
 def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income_requirements, charitable_donations,
                        client_age, spouse_age, end_year,
                        client_income_amount, client_income_start, client_income_end, client_income_index,
+                       client_pli_amount, client_pli_year,
                        client_pension_amount, client_pension_start, client_pension_end, client_pension_index,
                        client_oas_amount, client_oas_start, client_oas_end, client_oas_index,
                        client_cpp_amount, client_cpp_start, client_cpp_end, client_cpp_index,
                        spouse_income_amount, spouse_income_start, spouse_income_end, spouse_income_index,
+                       spouse_pli_amount, spouse_pli_year,
                        spouse_pension_amount, spouse_pension_start, spouse_pension_end, spouse_pension_index,
                        spouse_oas_amount, spouse_oas_start, spouse_oas_end, spouse_oas_index,
                        spouse_cpp_amount, spouse_cpp_start, spouse_cpp_end, spouse_cpp_index,
@@ -512,6 +527,19 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
         data["incomes"].append(client_pension)
 
 
+    data["pli"] = []
+
+    if client_pli_amount != '0':
+        client_pli = {}
+        client_pli["amount"] = int(client_pli_amount)
+        client_pli["year"] = int(client_pli_year)
+        data["pli"].append(client_pli)
+
+    if spouse_pli_amount != '0':
+        spouse_pli = {}
+        spouse_pli["amount"] = int(spouse_pli_amount)
+        spouse_pli["year"] = int(spouse_pli_year)
+        data["pli"].append(spouse_pli)
 
     data["pensions"] = []
 

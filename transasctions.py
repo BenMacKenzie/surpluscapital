@@ -34,7 +34,8 @@ class TransactionType(str, Enum):
     NEEDS = "NEEDS",
     TAX =  "TAX",
     REMOVE_SURPLUS_CAPITAL = "REMOVE_SURPLUS_CAPITAL",
-    CHARITABLE_DONATIONS = "CHARITABLE_DONATIONS"
+    CHARITABLE_DONATIONS = "CHARITABLE_DONATIONS",
+    PERMANENT_LIFE_INSURANCE = "PERMANENT_LIFE_INSURANCE"
 
 
 
@@ -277,6 +278,12 @@ def generate_base_transactions(transactions, current_book, parameters):
     if "sell_home" in parameters.keys() and parameters["sell_home"] == year:
         createTransaction(transactions, "credit", "joint", Account.CLEARING, current_book["joint"][Account.HOME], TransactionType.SALE_OF_HOME)
         createTransaction(transactions, "debit", "joint", Account.HOME, current_book["joint"][Account.HOME], TransactionType.SALE_OF_HOME)
+
+
+    for pli in parameters["pli"]:
+        if pli["year"] == year:
+            createTransaction(transactions, "credit", "joint", Account.CLEARING, pli["amount"], TransactionType.PERMANENT_LIFE_INSURANCE)
+
 
 
     current_book = process_transactions(current_book, transactions)
