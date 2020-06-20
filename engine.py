@@ -102,7 +102,9 @@ def get_projection(data, calculate_surplus_capital=True):
         return
 
 
-    def sell_assets_to_meet_needs_strategy_1(transactions, book, year):
+    def sell_assets_to_meet_needs_strategy_1(transactions, start_book, year):
+
+        book = process_transactions(start_book, transactions)
 
         needs = 0 - book['joint'][Account.CLEARING]
 
@@ -110,7 +112,7 @@ def get_projection(data, calculate_surplus_capital=True):
 
         client_age = get_age(parameters["client_age"], parameters["start_year"], year)
 
-        liquidate_in_order(transactions, book, "client", client_age, ["tax_rate"], 0, target,
+        liquidate_in_order(transactions, start_book, "client", client_age, parameters["tax_rate"], 0, target,
                            [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
         return
