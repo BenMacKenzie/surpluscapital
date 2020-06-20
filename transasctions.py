@@ -281,8 +281,17 @@ def generate_base_transactions(transactions, current_book, parameters):
 
 
     for pli in parameters["pli"]:
-        if pli["year"] == year:
-            createTransaction(transactions, "credit", "joint", Account.CLEARING, pli["amount"], TransactionType.PERMANENT_LIFE_INSURANCE)
+        if pli["person"] == "client":
+          if get_age(year, parameters['start_year'], parameters['client_age']) == parameters["client_life_expectancy"]:
+              createTransaction(transactions, "credit", "joint", Account.CLEARING, pli["amount"],
+                                TransactionType.PERMANENT_LIFE_INSURANCE)
+        else:
+            if get_age(year, parameters['start_year'], parameters['spouse_age']) == parameters[
+                "spouse_life_expectancy"]:
+                createTransaction(transactions, "credit", "joint", Account.CLEARING, pli["amount"],
+                                  TransactionType.PERMANENT_LIFE_INSURANCE)
+
+
 
 
 

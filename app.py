@@ -28,8 +28,10 @@ data = {
         "inflation": 0.02,
         "start_year": 2020,
         "client_age": 65,
+        "client_life_expectancy": 95,
         "spouse": True,
         "spouse_age": 65,
+        "spouse_life_expectancy": 95,
         "end_year": 2044,
         "end_balance": 0,
         "tax_rate":  {"marginal": [(12070, 0.0), (50000, 0.25), (90000, 0.35), (200000, 0.45)], "top": 0.54},
@@ -82,6 +84,10 @@ app.layout = dhc.Div([
             dhc.Tr([dhc.Td("Age: "),
                     dhc.Td(dcc.Input(id='client_age', type='number', placeholder='0', value='65')),
                     dhc.Td(dcc.Input(id='spouse_age', type='number', placeholder='0', value='65'))]),
+
+            dhc.Tr([dhc.Td("Life Expectancey: "),
+                    dhc.Td(dcc.Input(id='client_life_expectancy', type='number', placeholder='0', value='95')),
+                    dhc.Td(dcc.Input(id='spouse_life_expectancy', type='number', placeholder='0', value='95'))]),
 
             dhc.Tr([dhc.Td("Regular Asset: "), dhc.Td(dcc.Input(id='client_regular_account',type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_regular_account',type='number', placeholder='0', value='0'))]),
             dhc.Tr([dhc.Td("Regular Asset Book Value: "), dhc.Td(dcc.Input(id='client_regular_account_bv', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_regular_account_bv', type='number', placeholder='0', value='0'))]),
@@ -212,16 +218,12 @@ dhc.Table([
 
 
     dhc.Table([
-        dhc.Tr([dhc.Td("permanent life insurance"), dhc.Td("amount"), dhc.Td("payout year")]),
+        dhc.Tr([dhc.Td("permanent life insurance"), dhc.Td("amount")]),
         dhc.Tr([dhc.Td("client: "),
-                dhc.Td(dcc.Input(id='client_pli_amount', type='number', placeholder='0', value='0')),
-                dhc.Td(dcc.Input(id='client_pli_year', type='number', placeholder='0', value='0')),
-
+                dhc.Td(dcc.Input(id='client_pli_amount', type='number', placeholder='0', value='0'))
               ]),
         dhc.Tr([dhc.Td("spouse: "),
-                dhc.Td(dcc.Input(id='spouse_pli_amount', type='number', placeholder='0', value='0')),
-                dhc.Td(dcc.Input(id='spouse_pli_year', type='number', placeholder='0', value='0')),
-
+                dhc.Td(dcc.Input(id='spouse_pli_amount', type='number', placeholder='0', value='0'))
                 ]),
        ]),
 
@@ -232,7 +234,6 @@ dhc.Table([
     dhc.Div(),
 
         dhc.Table([
-            dhc.Tr([dhc.Td("End Year"),  dhc.Td(dcc.Input(id="end_year", type='number', placeholder='0', value='2040'))]),
 
             dhc.Tr([dhc.Td("Income Requirements"), dhc.Td(dcc.Input(id="income_requirements", type='number', placeholder='0', value='100000'))]),
             dhc.Tr([dhc.Td("Charitable Donations"), dhc.Td(dcc.Input(id="charitable_donations", type='number', placeholder='0', value='0'))]),
@@ -288,10 +289,9 @@ dhc.Table([
 
 
     ])
-spouse_fields = ["spouse_age", "spouse_regular_account", "spouse_regular_account_bv", "spouse_tfsa_account", "spouse_rrsp_account", "spouse_rrif_account", "spouse_lira_account", "spouse_lif_account",
+spouse_fields = ["spouse_age", "spouse_life_expectancy", "spouse_regular_account", "spouse_regular_account_bv", "spouse_tfsa_account", "spouse_rrsp_account", "spouse_rrif_account", "spouse_lira_account", "spouse_lif_account",
                  "spouse_income_amount", "spouse_income_start_year", "spouse_income_end_year", "spouse_income_index",
                                       'spouse_pli_amount',
-                                      'spouse_pli_year',
                                       'spouse_pension_amount',
                                       'spouse_pension_start_year',
                                       'spouse_pension_end_year',
@@ -432,13 +432,13 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lira, lif,
                                       Input('charitable_donations', 'value'),
                                       Input('client_age', 'value'),
                                       Input('spouse_age', 'value'),
-                                      Input('end_year', 'value'),
+                                      Input('client_life_expectancy', 'value'),
+                                      Input('spouse_life_expectancy', 'value'),
                                       Input('client_income_amount', 'value'),
                                       Input('client_income_start_year', 'value'),
                                       Input('client_income_end_year', 'value'),
                                       Input('client_income_index', 'value'),
                                       Input('client_pli_amount', 'value'),
-                                      Input('client_pli_year', 'value'),
                                       Input('client_pension_amount', 'value'),
                                       Input('client_pension_start_year', 'value'),
                                       Input('client_pension_end_year', 'value'),
@@ -456,7 +456,6 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lira, lif,
                                       Input('spouse_income_end_year', 'value'),
                                       Input('spouse_income_index', 'value'),
                                       Input('spouse_pli_amount', 'value'),
-                                      Input('spouse_pli_year', 'value'),
                                       Input('spouse_pension_amount', 'value'),
                                       Input('spouse_pension_start_year', 'value'),
                                       Input('spouse_pension_end_year', 'value'),
@@ -475,19 +474,21 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lira, lif,
 
                                       ], state=[State('xxx', 'data')])
 def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income_requirements, charitable_donations,
-                       client_age, spouse_age, end_year,
+                       client_age, spouse_age, client_life_expectancy, spouse_life_expectancy,
                        client_income_amount, client_income_start, client_income_end, client_income_index,
-                       client_pli_amount, client_pli_year,
+                       client_pli_amount,
                        client_pension_amount, client_pension_start, client_pension_end, client_pension_index,
                        client_oas_amount, client_oas_start, client_oas_end, client_oas_index,
                        client_cpp_amount, client_cpp_start, client_cpp_end, client_cpp_index,
                        spouse_income_amount, spouse_income_start, spouse_income_end, spouse_income_index,
-                       spouse_pli_amount, spouse_pli_year,
+                       spouse_pli_amount,
                        spouse_pension_amount, spouse_pension_start, spouse_pension_end, spouse_pension_index,
                        spouse_oas_amount, spouse_oas_start, spouse_oas_end, spouse_oas_index,
                        spouse_cpp_amount, spouse_cpp_start, spouse_cpp_end, spouse_cpp_index,
                        sell_home, sell_home_year, plan_type,
                        data):
+
+    data["start_year"] = 2020 #fix this
     data["end_balance"]= int(balance)
     data["growth_rate"] = float(growth_rate)
     data["income_rate"] = float(income_rate)
@@ -497,12 +498,18 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
     data["client_age"]=int(client_age)
     data["spouse_age"] = int(spouse_age)
 
+    data["client_life_expectancy"]=int(client_life_expectancy)
+    data["spouse_life_expectancy"] = int(spouse_life_expectancy)
+
     if plan_type == "client":
         data["spouse"] = False
+        data["end_year"] =  data["start_year"] + data["client_life_expectancy"] -  data["client_age"]
     else:
         data["spouse"] = True
+        data["end_year"] = max([ data["start_year"] + data["client_life_expectancy"] -  data["client_age"],  data["start_year"] + data["spouse_life_expectancy"] -  data["spouse_age"]])
 
-    data["end_year"]=int(end_year)
+
+
 
 
     data["incomes"] = []
@@ -531,14 +538,14 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
 
     if client_pli_amount != '0':
         client_pli = {}
+        client_pli["person"] = "client"
         client_pli["amount"] = int(client_pli_amount)
-        client_pli["year"] = int(client_pli_year)
         data["pli"].append(client_pli)
 
     if spouse_pli_amount != '0':
         spouse_pli = {}
+        spouse_pli["person"] = "spouse"
         spouse_pli["amount"] = int(spouse_pli_amount)
-        spouse_pli["year"] = int(spouse_pli_year)
         data["pli"].append(spouse_pli)
 
     data["pensions"] = []
