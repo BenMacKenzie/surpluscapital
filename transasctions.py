@@ -35,7 +35,8 @@ class TransactionType(str, Enum):
     TAX =  "TAX",
     REMOVE_SURPLUS_CAPITAL = "REMOVE_SURPLUS_CAPITAL",
     CHARITABLE_DONATIONS = "CHARITABLE_DONATIONS",
-    PERMANENT_LIFE_INSURANCE = "PERMANENT_LIFE_INSURANCE"
+    PERMANENT_LIFE_INSURANCE = "PERMANENT_LIFE_INSURANCE",
+    TRANSFER_ASSETS_TO_SPOUSE =  "TRANSFER_ASSETS_TO_SPOUSE"
 
 
 
@@ -122,6 +123,13 @@ def process_transactions(book, transactions):
 
     return book
 
+
+def transfer_assets_after_spouse_death(transactions, book, xfer_from, xfer_to):
+    accounts = [Account.REGULAR, Account.LIRA, Account.LIF, Account.TFSA, Account.RRSP,  Account.RRIF]
+
+    for account in accounts:
+        createTransaction(transactions, "debit", xfer_from, account, book[xfer_from][account], TransactionType.TRANSFER_ASSETS_TO_SPOUSE, desc="transfer to spouse")
+        createTransaction(transactions, "credit", xfer_to, account, book[xfer_from][account], TransactionType.TRANSFER_ASSETS_TO_SPOUSE, desc="transfer to spouse")
 
 
 
@@ -261,6 +269,15 @@ def generate_base_transactions(transactions, current_book, parameters):
 
     tax_rate = parameters["tax_rate"]
     year = current_book["year"]
+
+    if parameters["spouse"]:
+        if get_age(year, parameters['start_year'], parameters['client_age']) == (parameters["client_life_expectancy"] + 1):
+            transfer_assets_after_spouse_death(transactions, current_book, "client", "spouse")
+        elif get_age(year, parameters['start_year'], parameters['spouse_age']) == (parameters["spouse_life_expectancy"] + 1):
+            transfer_assets_after_spouse_death(transactions, current_book, "spouse", "client")
+
+
+
     createTransaction(transactions, "debit", "joint", Account.CLEARING, get_future_value(parameters["start_year"], year, parameters["income_requirements"], parameters["inflation"]), TransactionType.NEEDS, desc="living expense")
     createTransaction(transactions, "debit", "joint", Account.CLEARING, get_future_value(parameters["start_year"], year, parameters["charitable_donations"], parameters["inflation"]), TransactionType.CHARITABLE_DONATIONS, desc="living expense")
 
