@@ -233,10 +233,27 @@ dhc.Table([
 
     dhc.Div(),
 
+
+    dhc.Table([
+        dhc.Tr([dhc.Td(""), dhc.Td("amount"), dhc.Td("start year"), dhc.Td("end year"), dhc.Td("index")]),
+        dhc.Tr([dhc.Td("donaation "),
+                dhc.Td(dcc.Input(id='charitable_donation_amount', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='charitable_donation_start_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Input(id='charitable_donation_end_year', type='number', placeholder='0', value='0')),
+                dhc.Td(dcc.Dropdown('charitable_donation_index',
+                                    options=[{'label': '0', 'value': '0.0'},
+                                             {'label': '1%', 'value': '0.01'},
+                                             {'label': '2%', 'value': '0.02'},
+                                             {'label': '3%', 'value': '0.03'},
+                                             {'label': '4%', 'value': '0.04'},
+                                             {'label': '5%', 'value': '0.05'},
+                                             ], value='0.02'))])]),
+
+
         dhc.Table([
 
             dhc.Tr([dhc.Td("Income Requirements"), dhc.Td(dcc.Input(id="income_requirements", type='number', placeholder='0', value='100000'))]),
-            dhc.Tr([dhc.Td("Charitable Donations"), dhc.Td(dcc.Input(id="charitable_donations", type='number', placeholder='0', value='0'))]),
+
 
             dhc.Tr([dhc.Td("End Balance"), dhc.Td(dcc.Input(id="end_balance",type='number', placeholder='0', value='0' ))]),
             dhc.Tr([dhc.Td("Growth Rate"), dhc.Td(dcc.Dropdown('growth_rate',
@@ -429,7 +446,10 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lira, lif,
                                       Input('income_rate', 'value'),
                                       Input('inflation_rate', 'value'),
                                       Input('income_requirements', 'value'),
-                                      Input('charitable_donations', 'value'),
+                                      Input('charitable_donation_amount', 'value'),
+                                      Input('charitable_donation_start_year', 'value'),
+                                      Input('charitable_donation_end_year', 'value'),
+                                      Input('charitable_donation_index', 'value'),
                                       Input('client_age', 'value'),
                                       Input('spouse_age', 'value'),
                                       Input('client_life_expectancy', 'value'),
@@ -473,7 +493,8 @@ def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lira, lif,
                                       Input("plan_type", 'value')
 
                                       ], state=[State('xxx', 'data')])
-def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income_requirements, charitable_donations,
+def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income_requirements,
+                       charitable_donation_amount, charitable_donation_start_year, charitable_donation_end_year, charitable_donation_index,
                        client_age, spouse_age, client_life_expectancy, spouse_life_expectancy,
                        client_income_amount, client_income_start, client_income_end, client_income_index,
                        client_pli_amount,
@@ -511,12 +532,12 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
         data["end_year"] = max([ data["start_year"] + data["client_life_expectancy"] -  data["client_age"],  data["start_year"] + data["spouse_life_expectancy"] -  data["spouse_age"]])
 
     data["charitable_donations"] = []
-    if charitable_donations != '0':
+    if charitable_donation_amount != '0':
         donation = {}
-        donation['start_year'] = 2020
-        donation['end_year'] = data["end_year"]
-        donation["amount"] =    int(charitable_donations)
-        donation['index_rate'] = float(inflation_rate)
+        donation['start_year'] = charitable_donation_start_year
+        donation['end_year'] = charitable_donation_end_year
+        donation["amount"] =    int(charitable_donation_amount)
+        donation['index_rate'] = float(charitable_donation_index)
         data["charitable_donations"].append(donation)
 
 
