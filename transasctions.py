@@ -249,6 +249,15 @@ def process_pensions(transactions, start_year, year, pensions):
 
 
 
+def process_charitable_donations(transactions, start_year, year, donations):
+    for donation in donations:
+        if donation["start_year"] <= year and donation["end_year"] >= year:
+
+            donation_amount= get_future_value(start_year, year, donation["amount"], donation["index_rate"])
+            createTransaction(transactions, "debit", "joint", Account.CLEARING, donation_amount, TransactionType.CHARITABLE_DONATIONS, desc="charitable donation")
+
+
+
 def process_incomes(transactions, start_year, year, incomes):
     for inccome in incomes:
         if inccome["start_year"] <= year and inccome["end_year"] >= year:
@@ -279,7 +288,10 @@ def generate_base_transactions(transactions, current_book, parameters):
 
 
     createTransaction(transactions, "debit", "joint", Account.CLEARING, get_future_value(parameters["start_year"], year, parameters["income_requirements"], parameters["inflation"]), TransactionType.NEEDS, desc="living expense")
-    createTransaction(transactions, "debit", "joint", Account.CLEARING, get_future_value(parameters["start_year"], year, parameters["charitable_donations"], parameters["inflation"]), TransactionType.CHARITABLE_DONATIONS, desc="living expense")
+
+
+
+    process_charitable_donations(transactions, parameters["start_year"], year, parameters["charitable_donations"])
 
     process_pensions(transactions, parameters["start_year"], year, parameters["pensions"])
     process_incomes(transactions, parameters["start_year"], year, parameters["incomes"])

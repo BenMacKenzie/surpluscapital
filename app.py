@@ -41,7 +41,7 @@ data = {
         "incomes": [],
         "pli": [],
         "income_requirements": 0,
-        "charitable_donations": 0,
+        "charitable_donations": [],
         },
     "start_book":  {
         "joint" : {Account.CLEARING: 0,
@@ -338,19 +338,19 @@ def update_graph(n, xxx, client, spouse, joint):
 
    #catch exdception here...
 
-    try:
-        sc_transactions, essential_capital_projection, surplus_capital_projection, projection, report = get_projection(d)
+   # try:
+    sc_transactions, essential_capital_projection, surplus_capital_projection, projection, report = get_projection(d)
 
-        fig = go.Figure(data=[
-            go.Bar(name='essential', x=projection["year"], y=projection["essential"]),
-            go.Bar(name='surplus', x=projection["year"], y=projection["surplus"])
-        ])
+    fig = go.Figure(data=[
+        go.Bar(name='essential', x=projection["year"], y=projection["essential"]),
+        go.Bar(name='surplus', x=projection["year"], y=projection["surplus"])
+    ])
 
-        fig.update_layout(barmode='stack')
+    fig.update_layout(barmode='stack')
 
-    except Exception as e:
-        myexceptions = myexceptions + str(e)
-        return None, None, None, myexceptions
+    #except Exception as e:
+    #    myexceptions = myexceptions + str(e)
+    #    return None, None, None, myexceptions
 
 
 
@@ -494,7 +494,9 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
     data["income_rate"] = float(income_rate)
     data["inflation"] = float(inflation_rate)
     data["income_requirements"] = int(income_requirements)
-    data["charitable_donations"] = int(charitable_donations)
+
+
+
     data["client_age"]=int(client_age)
     data["spouse_age"] = int(spouse_age)
 
@@ -508,6 +510,14 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
         data["spouse"] = True
         data["end_year"] = max([ data["start_year"] + data["client_life_expectancy"] -  data["client_age"],  data["start_year"] + data["spouse_life_expectancy"] -  data["spouse_age"]])
 
+    data["charitable_donations"] = []
+    if charitable_donations != '0':
+        donation = {}
+        donation['start_year'] = 2020
+        donation['end_year'] = data["end_year"]
+        donation["amount"] =    int(charitable_donations)
+        donation['index_rate'] = float(inflation_rate)
+        data["charitable_donations"].append(donation)
 
 
 
