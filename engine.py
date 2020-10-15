@@ -246,6 +246,34 @@ def get_projection(data, calculate_surplus_capital=True):
                 return transactions
 
 
+
+        for person in persons:
+
+            if book[person][Account.LIF] > delta:
+                createTransaction(transactions, "debit", person, Account.LIF, delta, TransactionType.REMOVE_SURPLUS_CAPITAL)
+                delta = 0
+
+            elif book[person][Account.LIF] > 0:
+                createTransaction(transactions, "debit", person, Account.LIF, book[person][Account.LIF],
+                                  TransactionType.REMOVE_SURPLUS_CAPITAL)
+
+                delta -= book[person][Account.LIF]
+
+            if delta == 0:
+                return transactions
+
+
+
+        if book["joint"][Account.HOME] > delta:
+            createTransaction(transactions, "debit", "joint", Account.HOME, delta,
+                              TransactionType.REMOVE_SURPLUS_CAPITAL)
+            delta = 0
+        elif book["joint"][Account.HOME] > 0:
+            createTransaction(transactions, "debit", "joint", Account.HOME, book["joint"][Account.HOME] ,
+                              TransactionType.REMOVE_SURPLUS_CAPITAL)
+            delta -= book["joint"][Account.HOME]
+
+
         return transactions
 
 
