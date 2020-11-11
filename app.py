@@ -26,6 +26,7 @@ data = {
         "growth_rate": 0.05,
         "income_rate": 0.02,
         "inflation": 0.02,
+        "interest_rate": 0.03,
         "start_year": 2020,
         "client_age": 65,
         "client_life_expectancy": 95,
@@ -40,7 +41,7 @@ data = {
         ],
         "incomes": [],
         "pli": [],
-        "income_requirements": 0,
+        "income_requirements": [],
         "charitable_donations": [],
         },
     "start_book":  {
@@ -514,7 +515,7 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
     data["growth_rate"] = float(growth_rate)
     data["income_rate"] = float(income_rate)
     data["inflation"] = float(inflation_rate)
-    data["income_requirements"] = int(income_requirements)
+
 
 
 
@@ -531,13 +532,26 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
         data["spouse"] = True
         data["end_year"] = max([ data["start_year"] + data["client_life_expectancy"] -  data["client_age"],  data["start_year"] + data["spouse_life_expectancy"] -  data["spouse_age"]])
 
+
+
+    data["income_requirements"] = []
+    core_income = {"start_year": 2020, "end_year": data["end_year"], "amount":  int(income_requirements), "index_rate": data["inflation"], "type": "CORE_NEEDS"}
+    data["income_requirements"].append(core_income)
+    core_income = {"start_year": 2020, "end_year": data["end_year"], "amount": 0, "index_rate": data["inflation"], "type": "HEALTH_CARE_EXPENSES"}
+    data["income_requirements"].append(core_income)
+    core_income = {"start_year": 2020, "end_year": data["end_year"], "amount": 0,  "index_rate": data["inflation"], "type": "DISCRETIONARY_SPENDING"}
+    data["income_requirements"].append(core_income)
+
+
     data["charitable_donations"] = []
     if charitable_donation_amount != '0':
         donation = {}
+        donation["person"] = "client"  #not in UI..should be either client or spouse
         donation['start_year'] = charitable_donation_start_year
         donation['end_year'] = charitable_donation_end_year
         donation["amount"] =    int(charitable_donation_amount)
         donation['index_rate'] = float(charitable_donation_index)
+
         data["charitable_donations"].append(donation)
 
 

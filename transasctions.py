@@ -31,12 +31,15 @@ class TransactionType(str, Enum):
     BOOK_VALUE_ADJUSTMENT = "BOOK_VALUE_ADJUSTMENT",
     SALE_OF_HOME = "SALE_OF_HOME",
     REGULAR_ASSET_INVESTMENT = "REGULAR_ASSET_INVESTMENT",
-    NEEDS = "NEEDS",
+    CORE_NEEDS = "CORE_NEEDS",
+    HEALTH_CARE_EXPENSE = "HEALTH_CARE_EXPENSES",
+    DISCRETIONARY_SPENDING = "DISCRETIONARY_SPENDING",
     TAX =  "TAX",
     REMOVE_SURPLUS_CAPITAL = "REMOVE_SURPLUS_CAPITAL",
     CHARITABLE_DONATIONS = "CHARITABLE_DONATIONS",
     PERMANENT_LIFE_INSURANCE = "PERMANENT_LIFE_INSURANCE",
-    TRANSFER_ASSETS_TO_SPOUSE =  "TRANSFER_ASSETS_TO_SPOUSE"
+    TRANSFER_ASSETS_TO_SPOUSE =  "TRANSFER_ASSETS_TO_SPOUSE",
+    OVERDRAFT_INTEREST = "OVERDRAFT_INTEREST"
 
 
 
@@ -146,6 +149,8 @@ def get_taxable_income(transactions, person):
 
                 else:
                     taxable_income += transaction.amount
+            elif transaction.transaction_type == TransactionType.CHARITABLE_DONATIONS:
+                taxable_income -= transaction.amount
 
     return taxable_income
 
@@ -248,13 +253,28 @@ def process_pensions(transactions, start_year, year, pensions):
             createTransaction(transactions, "credit", pension["person"], Account.CLEARING, pension_amount, TransactionType.PENSION_INCOME, desc=pension["name"])
 
 
+def process_income_requirements(transactions, start_year, year, income_requirements):
+    for income_requirement in income_requirements:
+        if income_requirement["start_year"] <= year and income_requirement["end_year"] >= year:
+            need = get_future_value(start_year, year, income_requirement["amount"], income_requirement["index_rate"])
+            createTransaction(transactions, "debit", "joint", Account.CLEARING, need, TransactionType(income_requirement["type"]))
+
+
+def process_interest_expense(transactions, current_book, interest_rate):
+
+    if current_book['joint'][Account.CLEARING] < 0:
+        createTransaction(transactions, "debit", "joint", Account.CLEARING, current_book['joint'][Account.CLEARING] * (-1) * interest_rate, TransactionType.OVERDRAFT_INTEREST)
+
+
 
 def process_charitable_donations(transactions, start_year, year, donations):
     for donation in donations:
         if donation["start_year"] <= year and donation["end_year"] >= year:
 
             donation_amount= get_future_value(start_year, year, donation["amount"], donation["index_rate"])
-            createTransaction(transactions, "debit", "joint", Account.CLEARING, donation_amount, TransactionType.CHARITABLE_DONATIONS, desc="charitable donation")
+            createTransaction(transactions, "debit", donation["person"], Account.CLEARING, donation_amount, TransactionType.CHARITABLE_DONATIONS, desc="charitable donation")
+
+
 
 
 
@@ -287,9 +307,9 @@ def generate_base_transactions(transactions, current_book, parameters):
 
 
 
-    createTransaction(transactions, "debit", "joint", Account.CLEARING, get_future_value(parameters["start_year"], year, parameters["income_requirements"], parameters["inflation"]), TransactionType.NEEDS, desc="living expense")
+    process_income_requirements(transactions, parameters["start_year"], year, parameters["income_requirements"])
 
-
+    process_interest_expense(transactions, current_book, parameters["interest_rate"])
 
     process_charitable_donations(transactions, parameters["start_year"], year, parameters["charitable_donations"])
 
@@ -351,6 +371,8 @@ def generate_base_transactions(transactions, current_book, parameters):
                 createTransaction(transactions, "credit", person, account,
                                   round(current_book[person][account] * parameters["income_rate"], 0),
                                   TransactionType.REGISTERERD_DIVIDEND)
+
+
 
     client_tax = calculate_tax(transactions,  "client", tax_rate)
     createTransaction(transactions, "debit", "client", Account.CLEARING, client_tax, TransactionType.TAX, desc="client tax before sale of assets")
