@@ -280,7 +280,7 @@ def get_projection(data, calculate_surplus_capital=True):
     def create_report(essential_capital_projection):
 
 
-        reporting_transactions  = ["NEEDS", "CHARITABLE_DONATIONS", "SALE_OF_HOME", "PERMANENT_LIFE_INSURANCE", "EARNED_INCOME", "OTHER_PENSION", "OAS", "CPP", "REGULAR_DIVIDEND", "REGISTERED_DIVIDEND", "REGULAR_ASSET_GROWTH", "REGISTERED_ASSET_GROWTH", "SALE_OF_REGULAR_ASSET",
+        reporting_transactions  = [ "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "SALE_OF_HOME", "PERMANENT_LIFE_INSURANCE", "EARNED_INCOME", "OTHER_PENSION", "OAS", "CPP", "REGULAR_DIVIDEND", "REGISTERED_DIVIDEND", "REGULAR_ASSET_GROWTH", "REGISTERED_ASSET_GROWTH", "SALE_OF_REGULAR_ASSET",
                                    "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TFSA_WITHDRAWAL", "LIF_WITHDRAWAL", "TAX"]
 
         spouse_reporting_transactions = ["SPOUSE_EARNED_INCOME", "SPOUSE_OTHER_PENSION", "SPOUSE_OAS", "SPOUSE_CPP", "SPOUSE_REGULAR_DIVIDEND", "SPOUSE_REGISTERED_DIVIDEND", "SPOUSE_REGULAR_ASSET_GROWTH", "SPOUSE_REGISTERED_ASSET_GROWTH",
@@ -305,7 +305,7 @@ def get_projection(data, calculate_surplus_capital=True):
                     t_type = "SPOUSE_" + t_type
 
                 if t_type in reporting_transactions:
-                    if t_type in ["NEEDS", "CHARITABLE_DONATIONS", "TAX", "SPOUSE_TAX"]  and t.entry_type == "debit":
+                    if t_type in [ "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "TAX", "SPOUSE_TAX"]  and t.entry_type == "debit":
                         df_t.iloc[i][t_type] += t.amount
 
                     elif  t.entry_type == "credit":
@@ -358,7 +358,9 @@ def get_projection(data, calculate_surplus_capital=True):
                                "SALE_OF_HOME", "PERMANENT_LIFE_INSURANCE",
                                "total_funds_in",
                                "TAX", "SPOUSE_TAX",
-                               "NEEDS", "CHARITABLE_DONATIONS",
+                               "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING",
+                               "CHARITABLE_DONATIONS",
+                               "OVERDRAFT_INTEREST",
                                "total_funds_out",
                                "net_funds_in",
                                "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE",
@@ -385,7 +387,7 @@ def get_projection(data, calculate_surplus_capital=True):
             df["total_funds_in"] = funds_in
 
             funds_out = df[[ "TAX", "SPOUSE_TAX",
-                               "NEEDS", "CHARITABLE_DONATIONS"]].sum(axis=1)
+                             "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST"]].sum(axis=1)
 
             df["total_funds_out"] = funds_out
 
@@ -405,7 +407,11 @@ def get_projection(data, calculate_surplus_capital=True):
                                "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL",
                                "LIF_WITHDRAWAL", "TFSA_WITHDRAWAL",
                                "SALE_OF_HOME", "PERMANENT_LIFE_INSURANCE",
-                               "total_funds_in", "TAX", "NEEDS", "CHARITABLE_DONATIONS", "total_funds_out",
+                               "total_funds_in", "TAX",
+                               "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING",
+                               "CHARITABLE_DONATIONS",
+                               "OVERDRAFT_INTEREST",
+                               "total_funds_out",
                                "net_funds_in",
                                "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE",
                                "RRSP", "RRIF", "TFSA", "LIRA", "LIF",
@@ -429,7 +435,7 @@ def get_projection(data, calculate_surplus_capital=True):
             df["total_funds_in"] = funds_in
 
             funds_out = df[["TAX",
-                            "NEEDS", "CHARITABLE_DONATIONS"]].sum(axis=1)
+                             "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST"]].sum(axis=1)
 
             df["total_funds_out"] = funds_out
 
