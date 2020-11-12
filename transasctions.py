@@ -267,12 +267,46 @@ def process_interest_expense(transactions, current_book, interest_rate):
 
 
 
-def process_charitable_donations(transactions, start_year, year, donations):
+def process_charitable_donations(transactions, joint_plan, start_year, year, donations):
+
+    donation_amount = 0
     for donation in donations:
         if donation["start_year"] <= year and donation["end_year"] >= year:
-
             donation_amount= get_future_value(start_year, year, donation["amount"], donation["index_rate"])
-            createTransaction(transactions, "debit", donation["person"], Account.CLEARING, donation_amount, TransactionType.CHARITABLE_DONATIONS, desc="charitable donation")
+
+    if donation_amount == 0:
+        return
+
+    if not joint_plan:
+        createTransaction(transactions, "debit", "client", Account.CLEARING, donation_amount, TransactionType.CHARITABLE_DONATIONS, desc="charitable donation")
+        return
+
+    #need to allocate dontation between client and spouse
+
+    client_income = get_taxable_income(transactions, "client")
+    spouse_income = get_taxable_income(transactions, "spouse")
+
+    if client_income > spouse_income:
+        higher_income, lower_income = "client", "spouse"
+    else:
+        higher_income, lower_income = "spouse", "client"
+
+    income_difference = abs(client_income - spouse_income)
+
+    if income_difference >= donation_amount:
+        createTransaction(transactions, "debit", higher_income, Account.CLEARING, donation_amount,
+                          TransactionType.CHARITABLE_DONATIONS, desc="charitable donation")
+
+    else:
+        higher_allocation = income_difference + (donation_amount - income_difference) / 2
+        lower_allocation = higher_allocation - income_difference
+        createTransaction(transactions, "debit", higher_income, Account.CLEARING, higher_allocation,
+                              TransactionType.CHARITABLE_DONATIONS, desc="charitable donation")
+        createTransaction(transactions, "debit", lower_income, Account.CLEARING, lower_allocation,
+                          TransactionType.CHARITABLE_DONATIONS, desc="charitable donation")
+
+
+
 
 
 
@@ -311,7 +345,7 @@ def generate_base_transactions(transactions, current_book, parameters):
 
     process_interest_expense(transactions, current_book, parameters["interest_rate"])
 
-    process_charitable_donations(transactions, parameters["start_year"], year, parameters["charitable_donations"])
+
 
     process_pensions(transactions, parameters["start_year"], year, parameters["pensions"])
     process_incomes(transactions, parameters["start_year"], year, parameters["incomes"])
@@ -372,7 +406,7 @@ def generate_base_transactions(transactions, current_book, parameters):
                                   round(current_book[person][account] * parameters["income_rate"], 0),
                                   TransactionType.REGISTERERD_DIVIDEND)
 
-
+    process_charitable_donations(transactions, parameters["spouse"], parameters["start_year"], year, parameters["charitable_donations"])
 
     client_tax = calculate_tax(transactions,  "client", tax_rate)
     createTransaction(transactions, "debit", "client", Account.CLEARING, client_tax, TransactionType.TAX, desc="client tax before sale of assets")

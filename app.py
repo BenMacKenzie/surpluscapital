@@ -546,7 +546,6 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
     data["charitable_donations"] = []
     if charitable_donation_amount != '0':
         donation = {}
-        donation["person"] = "client"  #not in UI..should be either client or spouse
         donation['start_year'] = charitable_donation_start_year
         donation['end_year'] = charitable_donation_end_year
         donation["amount"] =    int(charitable_donation_amount)
