@@ -57,6 +57,9 @@ def get_projection(data, calculate_surplus_capital=True):
             if book['joint'][Account.CLEARING] >= target_balance:
                 return
 
+            amount = target_balance - book['joint'][Account.CLEARING]
+
+
 
 
 
@@ -482,14 +485,18 @@ def get_projection(data, calculate_surplus_capital=True):
         desired_end_balance = get_future_value(parameters["start_year"],parameters["end_year"], parameters["end_balance"], parameters["inflation"])
 
         end_capital, sim = create_projection(start_book)
+
+        #debug
+        #return sim, []
         if end_capital < desired_end_balance:
             print("no surplus")
             return sim, []
 
 
-        print(f"essential capital {essential_capital}")
+
 
         while True:
+            print(f"essential capital {essential_capital}")
             book = start_book
             surplus_cap_transactions = set_essential_capital(book, essential_capital)
             book = process_transactions(book, surplus_cap_transactions)
@@ -511,30 +518,13 @@ def get_projection(data, calculate_surplus_capital=True):
 
             elif end_capital > desired_end_balance:
                 high = essential_capital
-                essential_capital = round((high + low) / 2,0)
+                essential_capital = round((high + low) / 2,2)
             else:
                 low = essential_capital
-                essential_capital = round((high + low) / 2,0)
+                essential_capital = round((high + low) / 2,2)
 
 
     essential_capital_projection, sc_transactions = find_essential_capital(start_book)
-
-
-
-    # reverse transactions
-    #for t in sc_transactions:
-    #    t.entry_type = "credit"
-
-    #remove income requiremenrts and pensions
-    #parameters["income_requirements"] = 0
-    #parameters["charitable_donations"] = 0
-    #parameters["pensions"] = []
-    #parameters["incomes"] = []
-
-
-    #project surplus capital.
-    #surplus_book = process_transactions(start_surplus_capital_book, sc_transactions)
-    #_, surplus_capital_projection = create_projection(surplus_book)
 
     _, surplus_capital_projection = create_projection(start_book)
 

@@ -27,7 +27,7 @@ data = {
         "income_rate": 0.02,
         "inflation": 0.02,
         "interest_rate": 0.03,
-        "start_year": 2020,
+        "start_year": 2021,
         "client_age": 65,
         "client_life_expectancy": 95,
         "spouse": True,
@@ -510,7 +510,7 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
                        sell_home, sell_home_year, plan_type,
                        data):
 
-    data["start_year"] = 2020 #fix this
+    data["start_year"] = 2021 #fix this
     data["end_balance"]= int(balance)
     data["growth_rate"] = float(growth_rate)
     data["income_rate"] = float(income_rate)
@@ -535,11 +535,11 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
 
 
     data["income_requirements"] = []
-    core_income = {"start_year": 2020, "end_year": data["end_year"], "amount":  int(income_requirements), "index_rate": data["inflation"], "type": "CORE_NEEDS"}
+    core_income = {"start_year": 2021, "end_year": data["end_year"], "amount":  int(income_requirements), "index_rate": data["inflation"], "type": "CORE_NEEDS"}
     data["income_requirements"].append(core_income)
-    core_income = {"start_year": 2020, "end_year": data["end_year"], "amount": 0, "index_rate": data["inflation"], "type": "HEALTH_CARE_EXPENSES"}
+    core_income = {"start_year": 2021, "end_year": data["end_year"], "amount": 0, "index_rate": data["inflation"], "type": "HEALTH_CARE_EXPENSES"}
     data["income_requirements"].append(core_income)
-    core_income = {"start_year": 2020, "end_year": data["end_year"], "amount": 0,  "index_rate": data["inflation"], "type": "DISCRETIONARY_SPENDING"}
+    core_income = {"start_year": 2021, "end_year": data["end_year"], "amount": 0,  "index_rate": data["inflation"], "type": "DISCRETIONARY_SPENDING"}
     data["income_requirements"].append(core_income)
 
 
