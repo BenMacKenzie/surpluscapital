@@ -1,15 +1,37 @@
 
 from enum import Enum
 import copy
-import pandas as pd
 import os
-
+import csv
 
 from tax import amount_of_deferred_asset_to_sell, amount_of_regular_asset_to_sell, _calculate_tax, calculate_marginal_tax
 
 dir = os.path.dirname(__file__)
 fn = os.path.join(dir, 'LIF_withdrawal_rates.csv')
-lif_withdrawal = pd.read_csv(fn)
+
+lif_withdrawal = {}
+
+#AGE,MINIMUM,MAXIMUM_ONTARIO,MAXIMUM_QUEBEC,MAXIMUM_FED
+with open(fn, mode='r') as csv_file:
+    csv_reader = csv.reader(csv_file)
+    header = True
+    for row in csv_reader:
+        if header:
+            header = False
+            continue
+
+        lif_withdrawal[int(row[0])] = {"minimum": float(row[1]), "maximum_ontario": float(row[2])}
+
+
+
+
+def get_min_withdrawal_rate(age):
+    return lif_withdrawal[age]["minimum"]
+
+def get_max_withdrawal_rate(age):
+    return lif_withdrawal[age]["maximum_ontario"]
+
+
 
 
 
@@ -198,7 +220,7 @@ def get_mandatory_lif_withdrawals(transactions, book, age, person, tax_rate):
 
     if book[person][Account.LIF] > 0 and age >= 50:
 
-        rate =  lif_withdrawal.loc[lif_withdrawal['AGE']==age].iloc[0]['MINIMUM']
+        rate = get_min_withdrawal_rate(age)
         amount = book[person][Account.RRIF] * rate  #fix this
 
         createTransaction(transactions, "debit", person, Account.RRIF, amount, TransactionType.LIF_WITHDRAWAL, desc="mandatory lif withdrawal")
@@ -465,7 +487,7 @@ def meet_cash_req_from_lif(transactions, book, person, age, tax_rate, needs, inc
     if book[person][Account.LIF] <= 0:
         return
 
-    rate = lif_withdrawal.loc[lif_withdrawal['AGE'] == age].iloc[0]['MAXIMUM_ONTARIO']
+    rate = get_max_withdrawal_rate(age)
     max_lif_withdrawal = book[person][Account.LIF] * rate
 
     deferred_asset_needed = amount_of_deferred_asset_to_sell(needs, taxable_income, tax_rate)
