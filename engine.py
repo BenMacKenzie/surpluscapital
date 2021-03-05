@@ -1,9 +1,8 @@
 
 from transasctions import *
 import json
+from utils import create_reportx
 import pandas as pd
-import numpy as np
-
 
 
 def get_projection(data, calculate_surplus_capital=True):
@@ -15,12 +14,7 @@ def get_projection(data, calculate_surplus_capital=True):
         for i in start_book["spouse"]:
             start_book["spouse"][i]=0
 
-
-
-
     start_book["year"]=parameters["start_year"]
-
-
 
 
     def liquidate_in_order(transactions, start_book, person, age, tax_rate, income_limit, amount, order):
@@ -58,10 +52,6 @@ def get_projection(data, calculate_surplus_capital=True):
                 return
 
             amount = target_balance - book['joint'][Account.CLEARING]
-
-
-
-
 
 
     #could use the state of book after processing base transactions and empty transactions.
@@ -280,214 +270,20 @@ def get_projection(data, calculate_surplus_capital=True):
         return transactions
 
 
-    def create_report(essential_capital_projection):
 
 
-        reporting_transactions  = [ "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "SALE_OF_HOME", "PERMANENT_LIFE_INSURANCE", "EARNED_INCOME", "OTHER_PENSION", "OAS", "CPP", "REGULAR_DIVIDEND", "REGISTERED_DIVIDEND", "REGULAR_ASSET_GROWTH", "REGISTERED_ASSET_GROWTH", "SALE_OF_REGULAR_ASSET",
-                                   "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TFSA_WITHDRAWAL", "LIF_WITHDRAWAL", "TAX"]
-
-        spouse_reporting_transactions = ["SPOUSE_EARNED_INCOME", "SPOUSE_OTHER_PENSION", "SPOUSE_OAS", "SPOUSE_CPP", "SPOUSE_REGULAR_DIVIDEND", "SPOUSE_REGISTERED_DIVIDEND", "SPOUSE_REGULAR_ASSET_GROWTH", "SPOUSE_REGISTERED_ASSET_GROWTH",
-                                         "SPOUSE_SALE_OF_REGULAR_ASSET", "SPOUSE_RRSP_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL", "SPOUSE_LIF_WITHDRAWAL", "SPOUSE_TAX" ]
-
-        if parameters["spouse"]:
-            reporting_transactions += spouse_reporting_transactions
-
-        num_years = len(essential_capital_projection)
-
-        df_t = pd.DataFrame(np.zeros((num_years, len(reporting_transactions))))
-        df_t.columns = reporting_transactions
-
-        for i in range(len(essential_capital_projection)):
-            for t in essential_capital_projection[i]["end"]["transactions"]:
-                if t.transaction_type == TransactionType.PENSION_INCOME:
-                    t_type = t.desc
-                else:
-                    t_type =  t.transaction_type.value
-
-                if t.person == "spouse":
-                    t_type = "SPOUSE_" + t_type
-
-                if t_type in reporting_transactions:
-                    if t_type in [ "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "TAX", "SPOUSE_TAX"]  and t.entry_type == "debit":
-                        df_t.iloc[i][t_type] += t.amount
-
-                    elif  t.entry_type == "credit":
-                            df_t.iloc[i][t_type] += t.amount
-
-
-        spouse_columns = {"NON_REGISTERED_ASSET": "SPOUSE_NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE": "SPOUSE_REGULAR_BOOK_VALUE", "RRSP": "SPOUSE_RRSP", "RRIF": "SPOUSE_RRIF", "TFSA": "SPOUSE_TFSA", "LIRA": "SPOUSE_LIRA", "LIF": "SPOUSE_LIF", "year": "spouse_year"}
-
-        client_proj = [record['start']['client'] for record in essential_capital_projection[:-1]]
-        client_proj.append(essential_capital_projection[-1]['end']['client'])
-
-        spouse_proj = [record['start']['spouse'] for record in essential_capital_projection[:-1]]
-        spouse_proj.append(essential_capital_projection[-1]['end']['spouse'])
-
-
-        joint_proj = [record['start']['joint'] for record in essential_capital_projection[:-1]]
-        joint_proj.append(essential_capital_projection[-1]['end']['joint'])
-
-
-        for i in range(len(essential_capital_projection)):
-            client_proj[i]["year"] = essential_capital_projection[i]["start"]["year"]
-            #spouse_proj[i]["year"] = essential_capital_projection[i]["start"]["year"]
-
-
-        df_c = pd.DataFrame(client_proj)
-        df_s = pd.DataFrame(spouse_proj)
-        df_s.rename(columns=spouse_columns, inplace=True)
-        df_j = pd.DataFrame(joint_proj)
-
-        df = pd.concat([df_c, df_s, df_j, df_t], axis=1)
-
-        df = df.round(0)
-
-        col_names = [y for y in df["year"]]
-
-
-        df.drop(['year'], 1, inplace=True)
-
-
-        if parameters["spouse"]:
-            ordered_columns = ["EARNED_INCOME", "SPOUSE_EARNED_INCOME", "OAS",
-                               "SPOUSE_OAS", "CPP", "SPOUSE_CPP",
-                               "OTHER_PENSION","SPOUSE_OTHER_PENSION",
-                               "REGULAR_DIVIDEND",  "SPOUSE_REGULAR_DIVIDEND",
-                               "SALE_OF_REGULAR_ASSET","SPOUSE_SALE_OF_REGULAR_ASSET",
-                               "RRSP_WITHDRAWAL",  "SPOUSE_RRSP_WITHDRAWAL",
-                               "RRIF_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL",
-                               "LIF_WITHDRAWAL", "SPOUSE_LIF_WITHDRAWAL",
-                               "TFSA_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL",
-                               "SALE_OF_HOME", "PERMANENT_LIFE_INSURANCE",
-                               "total_funds_in",
-                               "TAX", "SPOUSE_TAX",
-                               "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING",
-                               "CHARITABLE_DONATIONS",
-                               "OVERDRAFT_INTEREST",
-                               "total_funds_out",
-                               "net_funds_in",
-                               "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE",
-                               "SPOUSE_NON_REGISTERED_ASSET",  "SPOUSE_REGULAR_BOOK_VALUE",
-                               "RRSP", "SPOUSE_RRSP",
-                               "RRIF", "SPOUSE_RRIF",
-                               "LIRA", "SPOUSE_LIRA",
-                               "LIF",  "SPOUSE_LIF",
-                               "TFSA", "SPOUSE_TFSA",
-                               "HOME", "CLEARING", "total_assets"]
-
-
-
-            funds_in = df[["EARNED_INCOME", "SPOUSE_EARNED_INCOME", "OAS",
-                           "SPOUSE_OAS", "CPP", "SPOUSE_CPP",
-                           "OTHER_PENSION", "SPOUSE_OTHER_PENSION",
-                           "REGULAR_DIVIDEND", "SPOUSE_REGULAR_DIVIDEND",
-                           "SALE_OF_REGULAR_ASSET", "SPOUSE_SALE_OF_REGULAR_ASSET",
-                           "RRSP_WITHDRAWAL", "SPOUSE_RRSP_WITHDRAWAL",
-                           "RRIF_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL",
-                           "LIF_WITHDRAWAL", "SPOUSE_LIF_WITHDRAWAL",
-                           "TFSA_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL", "SALE_OF_HOME", "PERMANENT_LIFE_INSURANCE"]].sum(axis=1)
-
-            df["total_funds_in"] = funds_in
-
-            funds_out = df[[ "TAX", "SPOUSE_TAX",
-                             "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST"]].sum(axis=1)
-
-            df["total_funds_out"] = funds_out
-
-            df["net_funds_in"] = df["total_funds_in"] - df["total_funds_out"]
-
-
-            total_assets = df[[ "NON_REGISTERED_ASSET", "SPOUSE_NON_REGISTERED_ASSET",
-                               "RRSP", "SPOUSE_RRSP", "RRIF", "SPOUSE_RRIF", "TFSA", "SPOUSE_TFSA", "LIRA", "SPOUSE_LIRA", "LIF", "SPOUSE_LIF", "CLEARING", "HOME"]].sum(axis=1)
-
-            df["total_assets"]=total_assets
-
-            df = df[ordered_columns]
-
-        else:
-            ordered_columns = ["EARNED_INCOME", "OAS", "CPP", "REGULAR_DIVIDEND", "OTHER_PENSION",
-                               "SALE_OF_REGULAR_ASSET",
-                               "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL",
-                               "LIF_WITHDRAWAL", "TFSA_WITHDRAWAL",
-                               "SALE_OF_HOME", "PERMANENT_LIFE_INSURANCE",
-                               "total_funds_in", "TAX",
-                               "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING",
-                               "CHARITABLE_DONATIONS",
-                               "OVERDRAFT_INTEREST",
-                               "total_funds_out",
-                               "net_funds_in",
-                               "NON_REGISTERED_ASSET", "REGULAR_BOOK_VALUE",
-                               "RRSP", "RRIF", "TFSA", "LIRA", "LIF",
-                               "HOME", "CLEARING", "total_assets"]
-
-
-
-            funds_in = df[["EARNED_INCOME",
-                           "OAS",
-                           "CPP",
-                           "OTHER_PENSION",
-                           "REGULAR_DIVIDEND",
-                           "SALE_OF_REGULAR_ASSET",
-                           "RRSP_WITHDRAWAL",
-                           "RRIF_WITHDRAWAL",
-                           "LIF_WITHDRAWAL",
-                           "TFSA_WITHDRAWAL",
-                           "SALE_OF_HOME",
-                           "PERMANENT_LIFE_INSURANCE",]].sum(axis=1)
-
-            df["total_funds_in"] = funds_in
-
-            funds_out = df[["TAX",
-                             "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST"]].sum(axis=1)
-
-            df["total_funds_out"] = funds_out
-
-            df["net_funds_in"] = df["total_funds_in"] - df["total_funds_out"]
-
-            total_assets = df[["NON_REGISTERED_ASSET",
-                             "RRSP",  "RRIF", "TFSA", "LIRA", "LIF", "HOME", "CLEARING"]].sum(axis=1)
-
-            df["total_assets"] = total_assets
-
-            df = df[ordered_columns]
-
-
-
-
-        df = df.loc[:, (df != 0).any(axis=0)]
-
-        df = df.applymap(lambda x: '{:,.0f}'.format(x))
-        df = df.T
-
-        df.columns = col_names
-
-        df = df.reset_index()
-
-
-        df.rename(columns={'index': 'year'}, inplace=True)
-
-
-        return df
-
-
-    #TODO...problem with transactions...in first year, start transactions are just handling surplus capital....the real transactions for the
-    #year are in end, subsequently, tranaction are in start....or possibly first entry in project is not the first year...
     def find_essential_capital(start_book):
         low = 0
         high = get_capital(start_book)
         essential_capital = high
 
-        #make adjustment if you don't want to sell home.
-        #if start_book["joint"][Account.HOME] > parameters["end_balance"]  and  "sell_home" not in parameters.keys():
-        #    parameters["end_balance"] = start_book["joint"][Account.HOME]
 
 
         desired_end_balance = get_future_value(parameters["start_year"],parameters["end_year"], parameters["end_balance"], parameters["inflation"])
 
         end_capital, sim = create_projection(start_book)
 
-        #debug
-        #return sim, []
+
         if end_capital < desired_end_balance:
             print("no surplus")
             return sim, []
@@ -528,17 +324,34 @@ def get_projection(data, calculate_surplus_capital=True):
 
     _, surplus_capital_projection = create_projection(start_book)
 
-    a = []
 
-    for i in range(len(essential_capital_projection) - 1):
-        a.append([essential_capital_projection[i]["start"]["year"], get_capital(essential_capital_projection[i]["start"]), get_capital(surplus_capital_projection[i]["start"])- get_capital(essential_capital_projection[i]["start"])])
 
-    #report end of year for last year in projection...
-    a.append([essential_capital_projection[-1]["end"]["year"], get_capital(essential_capital_projection[-1]["end"]),
-              get_capital(surplus_capital_projection[-1]["end"]) - get_capital(essential_capital_projection[-1]["end"]) ])
 
-    report = create_report(surplus_capital_projection)
-    return sc_transactions, essential_capital_projection, surplus_capital_projection, pd.DataFrame(a, columns=["year", "essential", "surplus"]), report
+    l = len(essential_capital_projection) - 1
+    year = [essential_capital_projection[i]["start"]["year"] for i in range(l)]
+    year.append(essential_capital_projection[-1]["end"]["year"])
+    essential = [get_capital(essential_capital_projection[i]["start"]) for i in range(l)]
+    essential.append(get_capital(essential_capital_projection[-1]["end"]))
+    surplus = [get_capital(surplus_capital_projection[i]["start"])- get_capital(essential_capital_projection[i]["start"]) for i in range(l)]
+    surplus.append( get_capital(surplus_capital_projection[-1]["end"]) - get_capital(essential_capital_projection[-1]["end"]))
+
+    g = {}
+    g["year"] = year
+    g["essential"] = essential
+    g["surplus"] = surplus
+
+    report = create_reportx(surplus_capital_projection, parameters)
+
+    ### this is just for testing....remove and just return report ###
+    ### report should be in a form that is consumable by javascript component directly
+
+    report_df = pd.DataFrame(report['data'])
+    report_df = report_df.transpose()
+    report_df.columns = report["columns"]
+
+    #### end ####
+
+    return sc_transactions, essential_capital_projection, surplus_capital_projection, g, report_df
 
 
 
