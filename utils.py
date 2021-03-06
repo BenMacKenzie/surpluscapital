@@ -1,5 +1,5 @@
 
-from transasctions import *
+from transactions import *
 
 def sum_columns(d, col_list):
     t = [d[c] for c in col_list]

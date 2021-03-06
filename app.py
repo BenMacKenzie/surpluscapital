@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State
 import dash_table
 
-from transasctions import *
+from transactions import *
 
 from engine import get_projection
 
