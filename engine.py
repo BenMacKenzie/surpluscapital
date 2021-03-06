@@ -2,7 +2,7 @@
 from transasctions import *
 import json
 from utils import create_reportx
-import pandas as pd
+
 
 
 def get_projection(data, calculate_surplus_capital=True):
@@ -342,16 +342,22 @@ def get_projection(data, calculate_surplus_capital=True):
 
     report = create_reportx(surplus_capital_projection, parameters)
 
-    ### this is just for testing....remove and just return report ###
-    ### report should be in a form that is consumable by javascript component directly
+    #i think report is the in write form for the javascript UI...but dash wants the data to be a list of dicts
+    # ie [{'year': "oas", '2021': 0.5, "2021": 300}, {'year': "cpp, '2021': 0.75}]
+    dash_data = []
+    for i in range(len(report["data"][0])):
+        row= {}
+        for j in range(len(report["columns"])):
+            row[report["columns"][j]] = report["data"][j][i]
+        dash_data.append(row)
 
-    report_df = pd.DataFrame(report['data'])
-    report_df = report_df.transpose()
-    report_df.columns = report["columns"]
 
-    #### end ####
+    report["data"] = dash_data
 
-    return sc_transactions, essential_capital_projection, surplus_capital_projection, g, report_df
+    #end dash conversion...
+
+
+    return  g, report
 
 
 

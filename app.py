@@ -357,7 +357,11 @@ def update_graph(n, xxx, client, spouse, joint):
    #catch exdception here...
 
    # try:
-    sc_transactions, essential_capital_projection, surplus_capital_projection, projection, report = get_projection(d)
+    projection, report = get_projection(d)
+
+    #report_df = pd.DataFrame(report['data'])
+    #report_df = report_df.transpose()
+    #report_df.columns = report["columns"]
 
     fig = go.Figure(data=[
         go.Bar(name='essential', x=projection["year"], y=projection["essential"]),
@@ -372,20 +376,11 @@ def update_graph(n, xxx, client, spouse, joint):
 
 
 
-    client_proj = [record['start']['client'] for record in essential_capital_projection[:-1]]
-    client_proj.append(essential_capital_projection[-1]['end']['client'])
-
-    spouse_proj = [record['start']['spouse'] for record in essential_capital_projection[:-1]]
-    spouse_proj.append(essential_capital_projection[-1]['end']['spouse'])
-
-    joint_proj = [record['start']['joint'] for record in essential_capital_projection[:-1]]
-    joint_proj.append(essential_capital_projection[-1]['end']['joint'])
 
 
+    report_column_names = [{"name": i, "id": i} for i in report["columns"]]
 
-    report_column_names = [{"name": i, "id": i} for i in report.columns]
-
-    return fig, report_column_names, report.to_dict("records"), ""
+    return fig, report_column_names, report["data"], ""
 
 
 
