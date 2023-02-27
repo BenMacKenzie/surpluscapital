@@ -344,7 +344,7 @@ def get_projection(data, calculate_surplus_capital=True):
 
     #i think report is the in write form for the javascript UI...but dash wants the data to be a list of dicts
     # ie [{'year': "oas", '2021': 0.5, "2021": 300}, {'year': "cpp, '2021': 0.75}]
-    dash_data = []
+    """dash_data = []
     for i in range(len(report["data"][0])):
         row= {}
         for j in range(len(report["columns"])):
@@ -353,7 +353,7 @@ def get_projection(data, calculate_surplus_capital=True):
 
 
     report["data"] = dash_data
-
+    """
     #end dash conversion...
 
 
