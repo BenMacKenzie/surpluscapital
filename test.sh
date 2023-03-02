@@ -1,0 +1,1 @@
+curl -X POST https://5biiioz4fxmkbl4t7vgbmfyysi0yeydd.lambda-url.us-east-1.on.aws/ --data @data.json

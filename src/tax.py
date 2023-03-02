@@ -1,5 +1,6 @@
 
 
+
 def _calculate_tax(taxable_income, tax_rates):
     #tax rates: {"marginal": [(15,000.0.1), (30,000,0.4)], "top": 0.5}
     base = 0

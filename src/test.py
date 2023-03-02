@@ -1,4 +1,5 @@
 from engine import get_projection
+import json
 from transactions import Account, TransactionType
 
 data = {
@@ -50,9 +51,7 @@ data = {
 
 }
 
-
 g, report = get_projection(data)
 print(g)
 print(report)
-
-
+print(json.dumps(data))
