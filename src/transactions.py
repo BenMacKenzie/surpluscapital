@@ -166,7 +166,7 @@ def get_taxable_income(transactions, person):
     for transaction in transactions:
         if transaction.person == person:
             if transaction.transaction_type in taxable and transaction.entry_type == "credit":
-                if transaction.transaction_type== TransactionType.SALE_OF_REGULAR_ASSET:
+                if transaction.transaction_type == TransactionType.SALE_OF_REGULAR_ASSET:
                     taxable_income += (transaction.amount - transaction.book_value) * 0.5
 
                 else:
@@ -350,9 +350,9 @@ def calculate_tax(transactions, person, tax_rates):
 
 
 
-def generate_base_transactions(transactions, current_book, parameters):
+def generate_base_transactions(transactions, current_book, parameters, tax_rate):
 
-    tax_rate = parameters["tax_rate"]
+
     year = current_book["year"]
 
     if parameters["spouse"]:
@@ -405,10 +405,10 @@ def generate_base_transactions(transactions, current_book, parameters):
     if current_book["joint"][Account.HOME] > 0:
         createTransaction(transactions, "credit", "joint", Account.HOME, round(current_book["joint"][Account.HOME] * parameters["inflation"], 0), TransactionType.HOME_APPRECIATION)
 
-    get_mandatory_rrif_withdrawals(transactions, current_book, get_age(year, parameters['start_year'], parameters['client_age']), 'client', parameters["tax_rate"])
+    get_mandatory_rrif_withdrawals(transactions, current_book, get_age(year, parameters['start_year'], parameters['client_age']), 'client', tax_rate)
 
     if parameters["spouse"]:
-        get_mandatory_rrif_withdrawals(transactions, current_book, get_age(year, parameters['start_year'], parameters['spouse_age']), 'spouse', parameters["tax_rate"])
+        get_mandatory_rrif_withdrawals(transactions, current_book, get_age(year, parameters['start_year'], parameters['spouse_age']), 'spouse', tax_rate)
 
 
     for person in ["client", "spouse"]:

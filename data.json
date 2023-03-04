@@ -12,28 +12,7 @@
       "spouse_life_expectancy":95,
       "end_year":2044,
       "end_balance":0,
-      "tax_rate":{
-         "marginal":[
-            [
-               12070,
-               0.0
-            ],
-            [
-               50000,
-               0.25
-            ],
-            [
-               90000,
-               0.35
-            ],
-            [
-               200000,
-               0.45
-            ]
-         ],
-         "top":0.54
-      },
-      "Province":"Ontario",
+      "province":"Ontario",
       "pensions":[
          {
             "person":"client",

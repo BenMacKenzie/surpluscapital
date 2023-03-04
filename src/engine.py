@@ -2,6 +2,7 @@
 from transactions import *
 import json
 from utils import create_reportx
+from tax_utils import get_tax_rates
 
 
 
@@ -28,18 +29,18 @@ def get_projection(data, calculate_surplus_capital=True):
                 #pass in needs and pass in an income limit?
                 meet_cash_req_from_regular_asset(transactions, book, person, tax_rate, amount, income_limit)
             elif account == Account.RRIF:
-                meet_cash_req_from_deferred(transactions, book, person, Account.RRIF, parameters["tax_rate"], amount, income_limit)
+                meet_cash_req_from_deferred(transactions, book, person, Account.RRIF, tax_rate, amount, income_limit)
             elif account == Account.RRSP:
-                meet_cash_req_from_deferred(transactions, book, person, Account.RRSP, parameters["tax_rate"],amount, income_limit)
+                meet_cash_req_from_deferred(transactions, book, person, Account.RRSP, tax_rate,amount, income_limit)
 
             elif account == Account.LIF:
-                meet_cash_req_from_lif(transactions, book, person, age, parameters["tax_rate"], amount, income_limit)
+                meet_cash_req_from_lif(transactions, book, person, age, tax_rate, amount, income_limit)
 
             elif account == Account.LIRA:
                 if age >= 50 and book[person][Account.LIRA] > 0:
                     convert_lira_to_lif(transactions, book, person)
                     book = process_transactions(start_book, transactions)
-                    meet_cash_req_from_lif(transactions, book, person, age, parameters["tax_rate"], amount, income_limit)
+                    meet_cash_req_from_lif(transactions, book, person, age, tax_rate, amount, income_limit)
 
             elif account == Account.TFSA:
                 meet_cash_req_from_tfsa(transactions, book, person, amount, income_limit)
@@ -55,9 +56,10 @@ def get_projection(data, calculate_surplus_capital=True):
 
 
     #could use the state of book after processing base transactions and empty transactions.
-    def sell_assets_to_meet_needs_strategy_1_w_spouse(transactions, start_book, year):
+    def sell_assets_to_meet_needs_strategy_1_w_spouse(transactions, tax_rate, start_book, year):
 
         OAS_CLAWBACK = 78000
+
         client_age = get_age(parameters["client_age"], parameters["start_year"], year)
         spouse_age = get_age(parameters["spouse_age"], parameters["start_year"], year)
 
@@ -68,8 +70,8 @@ def get_projection(data, calculate_surplus_capital=True):
         target = needs / 2
 
 
-        liquidate_in_order(transactions, start_book, "client", client_age, parameters["tax_rate"], 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
-        liquidate_in_order(transactions, start_book, "spouse", spouse_age, parameters["tax_rate"], 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+        liquidate_in_order(transactions, start_book, "client", client_age, tax_rate, 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+        liquidate_in_order(transactions, start_book, "spouse", spouse_age, tax_rate, 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
         book = process_transactions(start_book, transactions)
 
@@ -79,7 +81,7 @@ def get_projection(data, calculate_surplus_capital=True):
         needs = 0 - book['joint'][Account.CLEARING]
         target = needs
 
-        liquidate_in_order(transactions, start_book, "client", client_age, parameters["tax_rate"], 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+        liquidate_in_order(transactions, start_book, "client", client_age, tax_rate, 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
         book = process_transactions(start_book, transactions)
 
@@ -89,13 +91,13 @@ def get_projection(data, calculate_surplus_capital=True):
         needs = 0 - book['joint'][Account.CLEARING]
         target = needs
 
-        liquidate_in_order(transactions, start_book, "spouse", spouse_age, parameters["tax_rate"], 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+        liquidate_in_order(transactions, start_book, "spouse", spouse_age, tax_rate, 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
 
         return
 
 
-    def sell_assets_to_meet_needs_strategy_1(transactions, start_book, year):
+    def sell_assets_to_meet_needs_strategy_1(transactions, tax_rate, start_book, year):
 
         book = process_transactions(start_book, transactions)
 
@@ -105,7 +107,9 @@ def get_projection(data, calculate_surplus_capital=True):
 
         client_age = get_age(parameters["client_age"], parameters["start_year"], year)
 
-        liquidate_in_order(transactions, start_book, "client", client_age, parameters["tax_rate"], 0, target,
+
+
+        liquidate_in_order(transactions, start_book, "client", client_age, tax_rate, 0, target,
                            [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
         return
@@ -113,10 +117,14 @@ def get_projection(data, calculate_surplus_capital=True):
 
     def simulate_one_year(start_book, year):
         transactions = []
-        generate_base_transactions(transactions, start_book, parameters)
+        tax_rate = get_tax_rates(parameters['province'])
+        generate_base_transactions(transactions, start_book, parameters, tax_rate)
         book = process_transactions(start_book, transactions)
 
-        #print(book['joint'][Account.CLEARING])
+        #tax_rate = parameters["tax_rate"]
+
+
+        ##FIX...get tax rate here:
 
         if book['joint'][Account.CLEARING] > 0:
             invest_funds(transactions, book, parameters)
@@ -124,9 +132,9 @@ def get_projection(data, calculate_surplus_capital=True):
         else:
 
             if parameters["spouse"]:
-                sell_assets_to_meet_needs_strategy_1_w_spouse(transactions, start_book, year)
+                sell_assets_to_meet_needs_strategy_1_w_spouse(transactions, tax_rate, start_book, year)
             else:
-                sell_assets_to_meet_needs_strategy_1(transactions, start_book, year)
+                sell_assets_to_meet_needs_strategy_1(transactions, tax_rate, start_book, year)
 
         book = process_transactions(start_book, transactions)
         book["year"] = year

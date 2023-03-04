@@ -30,5 +30,10 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(m, 10000 + 7000 / 0.6)
 
 
+    def test6(self):
+        tax_rates = tax.get_tax_rates('Ontario')
+        print(tax_rates)
+
+
 if __name__ == '__main__':
     unittest.main()

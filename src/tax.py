@@ -1,10 +1,38 @@
 
 
 
+cap_gains_rate = 0.5
+personal_exemption = 12896
+old_age_exemption = 7000
+old_age_exemption_age = 65
+clawback_base = 72000
+oas = 10000
+
+
+
+
+
+
+def get_oas_clawback(taxable_income):
+
+    if taxable_income > clawback_base:
+        clawback = (taxable_income - clawback_base) * .15
+        if clawback > oas:
+            clawback = oas
+    else:
+        clawback = 0
+
+    return clawback
+
 def _calculate_tax(taxable_income, tax_rates):
-    #tax rates: {"marginal": [(15,000.0.1), (30,000,0.4)], "top": 0.5}
     base = 0
     tax = 0
+    taxable_income -= personal_exemption
+    taxable_income -= get_oas_clawback(taxable_income)
+
+    if taxable_income <= 0:
+        return 0
+
     for (level, rate) in tax_rates["marginal"]:
         if taxable_income <= level:
             tax += (taxable_income - base) * rate
@@ -24,7 +52,7 @@ def calculate_marginal_tax(base_income, marginal_income, tax_rates):
 
 
 
-def amount_of_deferred_asset_to_sell(need, starting_income, tax_rates):
+def amount_of_deferred_asset_to_sell_old(need, starting_income, tax_rates):
     # tax rates: {"marginal": [(15,000.0.1), (30,000,0.4)], "top": 0.5}
 
     amount = 0
@@ -45,7 +73,7 @@ def amount_of_deferred_asset_to_sell(need, starting_income, tax_rates):
 
 
 #might be better to just double marginal levels, double starting income and halve the tax rates
-def amount_of_regular_asset_to_sell(need, book_value_ratio, starting_income, tax_rates):
+def amount_of_regular_asset_to_sell_old(need, book_value_ratio, starting_income, tax_rates):
 
     #tax rates: {"marginal": [(15,000.0.1), (30,000,0.4)], "top": 0.5}
     #book_value_ratio =  (value - book_value) / value
@@ -73,3 +101,44 @@ def amount_of_regular_asset_to_sell(need, book_value_ratio, starting_income, tax
     return amount
 
 
+
+
+
+def amount_of_regular_asset_to_sell(need, book_value_ratio, starting_income, tax_rates):
+    low = need
+    high = need / (1 - tax_rates["top"])
+    x = round((high + low) / 2, 1)
+
+    while True:
+        tax = calculate_marginal_tax(starting_income, x * book_value_ratio * cap_gains_rate, tax_rates)
+        net_proceeds = x - tax
+        y = need - net_proceeds
+
+        if abs(y) < 1:
+            break
+        elif y > 0:
+            low = x
+            x = round((high + low) / 2, 1)
+        else:
+            high = x
+            x = round((high + low) / 2, 1)
+    return x
+
+def amount_of_deferred_asset_to_sell(need, starting_income, tax_rates):
+    low = need
+    high = need / (1 - tax_rates["top"])
+    x = round((high + low) / 2, 1)
+
+    while True:
+        tax = calculate_marginal_tax(starting_income, x,  tax_rates)
+        net_proceeds = x - tax
+        y = need - net_proceeds
+        if abs(y) < 1:
+            break
+        elif y > 0:
+            low = x
+            x = round((high + low) / 2, 1)
+        else:
+            high = x
+            x = round((high + low) / 2, 1)
+        return x
