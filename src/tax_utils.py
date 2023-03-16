@@ -18,7 +18,6 @@ def get_tax_rates(province):
     provincial = marginal_tax_rates[province]
     combined = merge(federal,  provincial)
     return combined
-    #return {"marginal": [(12070, 0.0), (50000, 0.25), (90000, 0.35), (200000, 0.45)], "top": 0.54}
 
 
 def merge(federal, province):

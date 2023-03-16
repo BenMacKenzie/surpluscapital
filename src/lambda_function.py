@@ -7,6 +7,7 @@ import base64
 from engine import get_projection
 
 def lambda_handler(event, context):
+    print(f"Raw event: {event}")
     if "isBase64Encoded" in event and event["isBase64Encoded"]:
         data = json.loads(base64.b64decode(event["body"]))
     else:

@@ -83,6 +83,7 @@ def get_projection(data, calculate_surplus_capital=True):
 
         liquidate_in_order(transactions, start_book, "client", client_age, tax_rate, 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
+
         book = process_transactions(start_book, transactions)
 
         if book['joint'][Account.CLEARING] >= 0:
@@ -135,6 +136,7 @@ def get_projection(data, calculate_surplus_capital=True):
                 sell_assets_to_meet_needs_strategy_1_w_spouse(transactions, tax_rate, start_book, year)
             else:
                 sell_assets_to_meet_needs_strategy_1(transactions, tax_rate, start_book, year)
+
 
         book = process_transactions(start_book, transactions)
         book["year"] = year

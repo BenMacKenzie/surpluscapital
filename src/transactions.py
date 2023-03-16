@@ -4,7 +4,8 @@ import copy
 import os
 import csv
 
-from tax import amount_of_deferred_asset_to_sell, amount_of_regular_asset_to_sell, _calculate_tax, calculate_marginal_tax
+from tax import amount_of_deferred_asset_to_sell, amount_of_regular_asset_to_sell,\
+    _calculate_tax, calculate_marginal_tax, get_oas_clawback, get_taxable_income
 
 dir = os.path.dirname(__file__)
 fn = os.path.join(dir, 'LIF_withdrawal_rates.csv')
@@ -35,33 +36,7 @@ def get_max_withdrawal_rate(age):
 
 
 
-class TransactionType(str, Enum):
-    EARNED_INCOME = "EARNED_INCOME",
-    PENSION_INCOME = "PENSION_INCOME",
-    REGULAR_DIVIDEND = "REGULAR_DIVIDEND",
-    REGULAR_ASSET_GROWTH = "REGULAR_ASSET_GROWTH",
-    REGISTERERD_DIVIDEND = "REGISTERERD_DIVIDEND",
-    REGISTERED_ASSET_GROWTH = "REGISTERED_ASSET_GROWTH",
-    HOME_APPRECIATION = "HOME_APPRECIATION",
-    SALE_OF_REGULAR_ASSET = "SALE_OF_REGULAR_ASSET",
-    RRSP_CONVERSION = "RRSP_CONVERSION",
-    LIRA_CONVERSION = "LIRA_CONVERSION",
-    RRIF_WITHDRAWAL = "RRIF_WITHDRAWAL",
-    RRSP_WITHDRAWAL = "RRSP_WITHDRAWAL",
-    TFSA_WITHDRAWAL = "TFSA_WITHDRAWAL",
-    LIF_WITHDRAWAL = "LIF_WITHDRAWAL",
-    BOOK_VALUE_ADJUSTMENT = "BOOK_VALUE_ADJUSTMENT",
-    SALE_OF_HOME = "SALE_OF_HOME",
-    REGULAR_ASSET_INVESTMENT = "REGULAR_ASSET_INVESTMENT",
-    CORE_NEEDS = "CORE_NEEDS",
-    HEALTH_CARE_EXPENSE = "HEALTH_CARE_EXPENSES",
-    DISCRETIONARY_SPENDING = "DISCRETIONARY_SPENDING",
-    TAX =  "TAX",
-    REMOVE_SURPLUS_CAPITAL = "REMOVE_SURPLUS_CAPITAL",
-    CHARITABLE_DONATIONS = "CHARITABLE_DONATIONS",
-    PERMANENT_LIFE_INSURANCE = "PERMANENT_LIFE_INSURANCE",
-    TRANSFER_ASSETS_TO_SPOUSE =  "TRANSFER_ASSETS_TO_SPOUSE",
-    OVERDRAFT_INTEREST = "OVERDRAFT_INTEREST"
+from transaction_types import TransactionType
 
 
 
@@ -158,24 +133,6 @@ def transfer_assets_after_spouse_death(transactions, book, xfer_from, xfer_to):
 
 
 
-def get_taxable_income(transactions, person):
-    taxable_income = 0
-    taxable = [TransactionType.SALE_OF_REGULAR_ASSET, TransactionType.RRIF_WITHDRAWAL, TransactionType.RRSP_WITHDRAWAL,
-               TransactionType.REGULAR_DIVIDEND, TransactionType.PENSION_INCOME, TransactionType.EARNED_INCOME]
-
-    for transaction in transactions:
-        if transaction.person == person:
-            if transaction.transaction_type in taxable and transaction.entry_type == "credit":
-                if transaction.transaction_type == TransactionType.SALE_OF_REGULAR_ASSET:
-                    taxable_income += (transaction.amount - transaction.book_value) * 0.5
-
-                else:
-                    taxable_income += transaction.amount
-            elif transaction.transaction_type == TransactionType.CHARITABLE_DONATIONS:
-                taxable_income -= transaction.amount
-
-    return taxable_income
-
 
 
 
@@ -205,7 +162,7 @@ def convert_lira_to_lif(transactions, book, person):
 
 
 
-def get_mandatory_rrif_withdrawals(transactions, book, age, person, tax_rate):
+def get_mandatory_rrif_withdrawals(transactions, book, age, person):
 
     if book[person][Account.RRIF] > 0 and age >= 65:
         if age == 90:
@@ -216,7 +173,7 @@ def get_mandatory_rrif_withdrawals(transactions, book, age, person, tax_rate):
         createTransaction(transactions, "credit",person, Account.CLEARING, amount, TransactionType.RRIF_WITHDRAWAL, desc="mandatory rrif withdrawal")
 
 
-def get_mandatory_lif_withdrawals(transactions, book, age, person, tax_rate):
+def get_mandatory_lif_withdrawals(transactions, book, age, person):
 
     if book[person][Account.LIF] > 0 and age >= 50:
 
@@ -330,16 +287,26 @@ def process_charitable_donations(transactions, joint_plan, start_year, year, don
 
 
 
+def process_oas_clawback(transactions, spouse):
 
+    oas_clawback = get_oas_clawback(transactions, "client")
+    if oas_clawback > 0:
+        createTransaction(transactions, "debit", "client", Account.CLEARING, oas_clawback, TransactionType.OAS_CLAWBACK)
 
+    if not spouse:
+        return
+
+    oas_clawback = get_oas_clawback(transactions, "spouse")
+    if oas_clawback > 0:
+        createTransaction(transactions, "debit", "spouse", Account.CLEARING, oas_clawback, TransactionType.OAS_CLAWBACK)
 
 
 def process_incomes(transactions, start_year, year, incomes):
-    for inccome in incomes:
-        if inccome["start_year"] <= year and inccome["end_year"] >= year:
+    for income in incomes:
+        if income["start_year"] <= year and income["end_year"] >= year:
 
-            pension_amount= get_future_value(start_year, year, inccome["amount"], inccome["index_rate"])
-            createTransaction(transactions, "credit", inccome["person"], Account.CLEARING, pension_amount, TransactionType.EARNED_INCOME)
+            pension_amount= get_future_value(start_year, year, income["amount"], income["index_rate"])
+            createTransaction(transactions, "credit", income["person"], Account.CLEARING, pension_amount, TransactionType.EARNED_INCOME)
 
 
 def calculate_tax(transactions, person, tax_rates):
@@ -405,10 +372,10 @@ def generate_base_transactions(transactions, current_book, parameters, tax_rate)
     if current_book["joint"][Account.HOME] > 0:
         createTransaction(transactions, "credit", "joint", Account.HOME, round(current_book["joint"][Account.HOME] * parameters["inflation"], 0), TransactionType.HOME_APPRECIATION)
 
-    get_mandatory_rrif_withdrawals(transactions, current_book, get_age(year, parameters['start_year'], parameters['client_age']), 'client', tax_rate)
+    get_mandatory_rrif_withdrawals(transactions, current_book, get_age(year, parameters['start_year'], parameters['client_age']), 'client')
 
     if parameters["spouse"]:
-        get_mandatory_rrif_withdrawals(transactions, current_book, get_age(year, parameters['start_year'], parameters['spouse_age']), 'spouse', tax_rate)
+        get_mandatory_rrif_withdrawals(transactions, current_book, get_age(year, parameters['start_year'], parameters['spouse_age']), 'spouse')
 
 
     for person in ["client", "spouse"]:
@@ -429,6 +396,7 @@ def generate_base_transactions(transactions, current_book, parameters, tax_rate)
                                   TransactionType.REGISTERERD_DIVIDEND)
 
     process_charitable_donations(transactions, parameters["spouse"], parameters["start_year"], year, parameters["charitable_donations"])
+    process_oas_clawback(transactions, parameters["spouse"])
 
     client_tax = calculate_tax(transactions,  "client", tax_rate)
     createTransaction(transactions, "debit", "client", Account.CLEARING, client_tax, TransactionType.TAX, desc="client tax before sale of assets")
@@ -441,9 +409,9 @@ def meet_cash_req_from_regular_asset(transactions, book, person, tax_rate, needs
     #needs = 0 - book['joint'][Account.CLEARING]
     if book[person][Account.REGULAR] <= 0:
         return
-    book_value_ratio =  (book[person][Account.REGULAR] - book[person][Account.REGULAR_BOOK_VALUE]) / book[person][Account.REGULAR]
+    book_value_ratio = (book[person][Account.REGULAR] - book[person][Account.REGULAR_BOOK_VALUE]) / book[person][Account.REGULAR]
 
-    regular_asset_needed = amount_of_regular_asset_to_sell(needs, book_value_ratio, taxable_income, tax_rate)
+    regular_asset_needed = amount_of_regular_asset_to_sell(transactions, person, needs, book_value_ratio, taxable_income, tax_rate)
 
     if income_limit > 0:
         if taxable_income >= income_limit:
@@ -457,6 +425,9 @@ def meet_cash_req_from_regular_asset(transactions, book, person, tax_rate, needs
     else:
         sell_regular_asset(transactions, person, book, book[person][Account.REGULAR], tax_rate)
 
+    process_oas_clawback(transactions, person)
+
+
 
 def meet_cash_req_from_deferred(transactions, book, person, account, tax_rate, needs, income_limit=0):
     taxable_income = get_taxable_income(transactions, person)
@@ -465,7 +436,7 @@ def meet_cash_req_from_deferred(transactions, book, person, account, tax_rate, n
     if book[person][account] <= 0:
         return
 
-    deferred_asset_needed = amount_of_deferred_asset_to_sell(needs, taxable_income, tax_rate)
+    deferred_asset_needed = amount_of_deferred_asset_to_sell(transactions, person, needs, taxable_income, tax_rate)
 
     if income_limit > 0:
         if taxable_income > income_limit:
@@ -479,6 +450,7 @@ def meet_cash_req_from_deferred(transactions, book, person, account, tax_rate, n
     else:
         sell_deferred(transactions, person, account,  book[person][account], tax_rate)
 
+    process_oas_clawback(transactions, person)
 
 def meet_cash_req_from_lif(transactions, book, person, age, tax_rate, needs, income_limit):
     taxable_income = get_taxable_income(transactions, person)
@@ -503,6 +475,7 @@ def meet_cash_req_from_lif(transactions, book, person, age, tax_rate, needs, inc
     else:
         sell_deferred(transactions, person, Account.LIF,  max_lif_withdrawal, tax_rate)
 
+    process_oas_clawback(transactions, person)
 
 
 def meet_cash_req_from_tfsa(transactions, book, person, needs, income_limit):
