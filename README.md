@@ -13,7 +13,6 @@
         "spouse_life_expectancy": 95,
         "end_year": 2044,
         "end_balance": 0,
-        "tax_rate":  {"marginal": [(12070, 0.0), (50000, 0.25), (90000, 0.35), (200000, 0.45)], "top": 0.54},
         "Province": "Ontario",
         "pensions": [{"person":  <"client", "spouse">, "name": <"OAS", "CPP", "OTHER_PENSION">, , "start_year": 2040, "end_year": 2050, "amount": 12000, "index_rate": 0.04}],
         "incomes": [{"person":  <"client", "spouse">,  "start_year": 2040, "end_year": 2050, "amount": 12000, "index_rate": 0.04}],
