@@ -11,7 +11,7 @@ def lambda_handler(event, context):
     if "isBase64Encoded" in event and event["isBase64Encoded"]:
         data = json.loads(base64.b64decode(event["body"]))
     else:
-        data = event["body"]
+        data = json.loads(event["body"])
     print(data)
     essential_capital, report = get_projection(data)
 
