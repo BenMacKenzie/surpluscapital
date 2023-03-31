@@ -11,13 +11,13 @@ oas = 10000
 #TODO is oas clawback based on taxable income?  only difference is charitable donations
 def get_taxable_income(transactions, person):
     taxable_income = 0
-    taxable = [TransactionType.SALE_OF_REGULAR_ASSET, TransactionType.RRIF_WITHDRAWAL, TransactionType.RRSP_WITHDRAWAL,
-               TransactionType.REGULAR_DIVIDEND, TransactionType.PENSION_INCOME, TransactionType.EARNED_INCOME]
+    taxable = [TransactionType.SALE_OF_NON_REGISTERED_ASSET, TransactionType.RRIF_WITHDRAWAL, TransactionType.RRSP_WITHDRAWAL,
+               TransactionType.NON_REGISTERED_DIVIDEND, TransactionType.PENSION_INCOME, TransactionType.EARNED_INCOME]
 
     for transaction in transactions:
         if transaction.person == person:
             if transaction.transaction_type in taxable and transaction.entry_type == "credit":
-                if transaction.transaction_type == TransactionType.SALE_OF_REGULAR_ASSET:
+                if transaction.transaction_type == TransactionType.SALE_OF_NON_REGISTERED_ASSET:
                     taxable_income += (transaction.amount - transaction.book_value) * 0.5
 
                 else:
@@ -118,7 +118,7 @@ def amount_of_deferred_asset_to_sell_old(need, starting_income, tax_rates):
 
 
 #might be better to just double marginal levels, double starting income and halve the tax rates
-def amount_of_regular_asset_to_sell_old(need, book_value_ratio, starting_income, tax_rates):
+def amount_of_NON_REGISTERED_asset_to_sell_old(need, book_value_ratio, starting_income, tax_rates):
 
     #tax rates: {"marginal": [(15,000.0.1), (30,000,0.4)], "top": 0.5}
     #book_value_ratio =  (value - book_value) / value
@@ -149,7 +149,7 @@ def amount_of_regular_asset_to_sell_old(need, book_value_ratio, starting_income,
 
 
 
-def amount_of_regular_asset_to_sell(transactions, person, need, book_value_ratio, starting_income, tax_rates):
+def amount_of_NON_REGISTERED_asset_to_sell(transactions, person, need, book_value_ratio, starting_income, tax_rates):
     low = need
     high = need / (1 - tax_rates["top"])
     x = round((high + low) / 2, 1)

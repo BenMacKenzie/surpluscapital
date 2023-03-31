@@ -4,7 +4,7 @@ import copy
 import os
 import csv
 
-from tax import amount_of_deferred_asset_to_sell, amount_of_regular_asset_to_sell,\
+from tax import amount_of_deferred_asset_to_sell, amount_of_NON_REGISTERED_asset_to_sell,\
     _calculate_tax, calculate_marginal_tax, get_oas_clawback, get_taxable_income
 
 dir = os.path.dirname(__file__)
@@ -41,8 +41,8 @@ from transaction_types import TransactionType
 
 
 class Account(str, Enum):
-    REGULAR="NON_REGISTERED_ASSET",
-    REGULAR_BOOK_VALUE = "REGULAR_BOOK_VALUE"
+    NON_REGISTERED="NON_REGISTERED_ASSET",
+    NON_REGISTERED_BOOK_VALUE = "NON_REGISTERED_BOOK_VALUE"
     RRSP="RRSP",
     RRIF="RRIF",
     TFSA = "TFSA",
@@ -82,7 +82,7 @@ def get_capital(book):
 
     total += book['joint'][Account.HOME]
 
-    total += book['client'][Account.REGULAR]
+    total += book['client'][Account.NON_REGISTERED]
     total += book['client'][Account.RRIF]
     total += book['client'][Account.RRSP]
     total += book['client'][Account.TFSA]
@@ -92,7 +92,7 @@ def get_capital(book):
     if 'spouse' not in book.keys():
         return total
 
-    total += book['spouse'][Account.REGULAR]
+    total += book['spouse'][Account.NON_REGISTERED]
     total += book['spouse'][Account.RRIF]
     total += book['spouse'][Account.RRSP]
     total += book['spouse'][Account.TFSA]
@@ -125,7 +125,7 @@ def process_transactions(book, transactions):
 
 
 def transfer_assets_after_spouse_death(transactions, book, xfer_from, xfer_to):
-    accounts = [Account.REGULAR, Account.LIRA, Account.LIF, Account.TFSA, Account.RRSP,  Account.RRIF]
+    accounts = [Account.NON_REGISTERED, Account.LIRA, Account.LIF, Account.TFSA, Account.RRSP,  Account.RRIF]
 
     for account in accounts:
         createTransaction(transactions, "debit", xfer_from, account, book[xfer_from][account], TransactionType.TRANSFER_ASSETS_TO_SPOUSE, desc="transfer to spouse")
@@ -184,13 +184,13 @@ def get_mandatory_lif_withdrawals(transactions, book, age, person):
         createTransaction(transactions, "credit",person, Account.CLEARING, amount, TransactionType.LIF_WITHDRAWAL, desc="mandatory lif withdrawal")
 
 
-def sell_regular_asset(transactions, person, book, amount, tax_rate):
+def sell_NON_REGISTERED_asset(transactions, person, book, amount, tax_rate):
     income = get_taxable_income(transactions, person)
-    total = book[person][Account.REGULAR]
-    bookvalue =book[person][Account.REGULAR_BOOK_VALUE]
-    createTransaction(transactions,"debit", person, Account.REGULAR, amount, TransactionType.SALE_OF_REGULAR_ASSET, book_value=round((amount / total) * bookvalue, 0), desc="sell asset")
-    createTransaction(transactions,"debit", person, Account.REGULAR_BOOK_VALUE, round((amount / total) * bookvalue,0), TransactionType.BOOK_VALUE_ADJUSTMENT)
-    createTransaction(transactions,"credit", person, Account.CLEARING, amount, TransactionType.SALE_OF_REGULAR_ASSET)
+    total = book[person][Account.NON_REGISTERED]
+    bookvalue =book[person][Account.NON_REGISTERED_BOOK_VALUE]
+    createTransaction(transactions,"debit", person, Account.NON_REGISTERED, amount, TransactionType.SALE_OF_NON_REGISTERED_ASSET, book_value=round((amount / total) * bookvalue, 0), desc="sell asset")
+    createTransaction(transactions,"debit", person, Account.NON_REGISTERED_BOOK_VALUE, round((amount / total) * bookvalue,0), TransactionType.BOOK_VALUE_ADJUSTMENT)
+    createTransaction(transactions,"credit", person, Account.CLEARING, amount, TransactionType.SALE_OF_NON_REGISTERED_ASSET)
 
     realized_cap_gain = (amount * (total - bookvalue) / total) * 0.5
     tax = calculate_marginal_tax(income, realized_cap_gain, tax_rate)
@@ -228,7 +228,7 @@ def process_pensions(transactions, start_year, year, pensions):
     for pension in pensions:
         if pension["start_year"] <= year and pension["end_year"] >= year:
 
-            pension_amount= get_future_value(start_year, year, pension["amount"], pension["index_rate"])
+            pension_amount = get_future_value(start_year, year, pension["amount"], pension["index_rate"])
             createTransaction(transactions, "credit", pension["person"], Account.CLEARING, pension_amount, TransactionType.PENSION_INCOME, desc=pension["name"])
 
 
@@ -380,10 +380,10 @@ def generate_base_transactions(transactions, current_book, parameters, tax_rate)
 
     for person in ["client", "spouse"]:
 
-        if (current_book[person][Account.REGULAR] > 0 and parameters["growth_rate"] > 0):
-            createTransaction(transactions,"credit", person, Account.REGULAR, round(current_book[person][Account.REGULAR] * parameters["growth_rate"],0), TransactionType.REGULAR_ASSET_GROWTH)
-        if (current_book[person][Account.REGULAR] > 0 and parameters["income_rate"] > 0):
-            createTransaction(transactions,"credit", person, Account.CLEARING, round(current_book[person][Account.REGULAR] * parameters["income_rate"],0), TransactionType.REGULAR_DIVIDEND)
+        if (current_book[person][Account.NON_REGISTERED] > 0 and parameters["growth_rate"] > 0):
+            createTransaction(transactions,"credit", person, Account.NON_REGISTERED, round(current_book[person][Account.NON_REGISTERED] * parameters["growth_rate"],0), TransactionType.NON_REGISTERED_ASSET_GROWTH)
+        if (current_book[person][Account.NON_REGISTERED] > 0 and parameters["income_rate"] > 0):
+            createTransaction(transactions,"credit", person, Account.CLEARING, round(current_book[person][Account.NON_REGISTERED] * parameters["income_rate"],0), TransactionType.NON_REGISTERED_DIVIDEND)
 
         for account in [Account.RRSP, Account.RRIF, Account.TFSA, Account.LIRA, Account.LIF]:
             if (current_book[person][account] > 0 and parameters["growth_rate"] > 0):
@@ -403,27 +403,27 @@ def generate_base_transactions(transactions, current_book, parameters, tax_rate)
     spouse_tax = calculate_tax(transactions, "spouse", tax_rate)
     createTransaction(transactions, "debit", "spouse", Account.CLEARING, spouse_tax, TransactionType.TAX, desc="spouse tax before sale of assets")
 
-def meet_cash_req_from_regular_asset(transactions, book, person, tax_rate, needs, income_limit=0):
+def meet_cash_req_from_NON_REGISTERED_asset(transactions, book, person, tax_rate, needs, income_limit=0):
 
     taxable_income = get_taxable_income(transactions, person)
     #needs = 0 - book['joint'][Account.CLEARING]
-    if book[person][Account.REGULAR] <= 0:
+    if book[person][Account.NON_REGISTERED] <= 0:
         return
-    book_value_ratio = (book[person][Account.REGULAR] - book[person][Account.REGULAR_BOOK_VALUE]) / book[person][Account.REGULAR]
+    book_value_ratio = (book[person][Account.NON_REGISTERED] - book[person][Account.NON_REGISTERED_BOOK_VALUE]) / book[person][Account.NON_REGISTERED]
 
-    regular_asset_needed = amount_of_regular_asset_to_sell(transactions, person, needs, book_value_ratio, taxable_income, tax_rate)
+    NON_REGISTERED_asset_needed = amount_of_NON_REGISTERED_asset_to_sell(transactions, person, needs, book_value_ratio, taxable_income, tax_rate)
 
     if income_limit > 0:
         if taxable_income >= income_limit:
             return #do nothing
-        if regular_asset_needed * book_value_ratio + taxable_income > income_limit:
-            regular_asset_needed = (income_limit - taxable_income) / book_value_ratio
+        if NON_REGISTERED_asset_needed * book_value_ratio + taxable_income > income_limit:
+            NON_REGISTERED_asset_needed = (income_limit - taxable_income) / book_value_ratio
 
 
-    if regular_asset_needed <= book[person][Account.REGULAR]:
-        sell_regular_asset(transactions, person, book, regular_asset_needed, tax_rate)
+    if NON_REGISTERED_asset_needed <= book[person][Account.NON_REGISTERED]:
+        sell_NON_REGISTERED_asset(transactions, person, book, NON_REGISTERED_asset_needed, tax_rate)
     else:
-        sell_regular_asset(transactions, person, book, book[person][Account.REGULAR], tax_rate)
+        sell_NON_REGISTERED_asset(transactions, person, book, book[person][Account.NON_REGISTERED], tax_rate)
 
     process_oas_clawback(transactions, person)
 
@@ -499,19 +499,19 @@ def meet_cash_req_from_tfsa(transactions, book, person, needs, income_limit):
 def invest_funds(transactions,book, parameters):
     amount_to_invest = book["joint"][Account.CLEARING]
     createTransaction(transactions, "debit", "joint", Account.CLEARING, book["joint"][Account.CLEARING],
-                      TransactionType.REGULAR_ASSET_INVESTMENT)
+                      TransactionType.NON_REGISTERED_ASSET_INVESTMENT)
 
     if parameters["spouse"]:
         amount_to_invest = amount_to_invest / 2
-        createTransaction(transactions, "credit", "client", Account.REGULAR, amount_to_invest, TransactionType.REGULAR_ASSET_INVESTMENT)
-        createTransaction(transactions, "credit", "spouse", Account.REGULAR, amount_to_invest,
-                          TransactionType.REGULAR_ASSET_INVESTMENT)
-        createTransaction(transactions, "credit", "client", Account.REGULAR_BOOK_VALUE, amount_to_invest,
-                          TransactionType.REGULAR_ASSET_INVESTMENT)
-        createTransaction(transactions, "credit", "spouse", Account.REGULAR_BOOK_VALUE, amount_to_invest,
-                          TransactionType.REGULAR_ASSET_INVESTMENT)
+        createTransaction(transactions, "credit", "client", Account.NON_REGISTERED, amount_to_invest, TransactionType.NON_REGISTERED_ASSET_INVESTMENT)
+        createTransaction(transactions, "credit", "spouse", Account.NON_REGISTERED, amount_to_invest,
+                          TransactionType.NON_REGISTERED_ASSET_INVESTMENT)
+        createTransaction(transactions, "credit", "client", Account.NON_REGISTERED_BOOK_VALUE, amount_to_invest,
+                          TransactionType.NON_REGISTERED_ASSET_INVESTMENT)
+        createTransaction(transactions, "credit", "spouse", Account.NON_REGISTERED_BOOK_VALUE, amount_to_invest,
+                          TransactionType.NON_REGISTERED_ASSET_INVESTMENT)
     else:
-        createTransaction(transactions, "credit", "client", Account.REGULAR, amount_to_invest,
-                          TransactionType.REGULAR_ASSET_INVESTMENT)
-        createTransaction(transactions, "credit", "client", Account.REGULAR_BOOK_VALUE, amount_to_invest,
-                          TransactionType.REGULAR_ASSET_INVESTMENT)
+        createTransaction(transactions, "credit", "client", Account.NON_REGISTERED, amount_to_invest,
+                          TransactionType.NON_REGISTERED_ASSET_INVESTMENT)
+        createTransaction(transactions, "credit", "client", Account.NON_REGISTERED_BOOK_VALUE, amount_to_invest,
+                          TransactionType.NON_REGISTERED_ASSET_INVESTMENT)

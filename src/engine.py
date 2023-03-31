@@ -25,9 +25,9 @@ def get_projection(data, calculate_surplus_capital=True):
 
 
         for account in order:
-            if account == Account.REGULAR:
+            if account == Account.NON_REGISTERED:
                 #pass in needs and pass in an income limit?
-                meet_cash_req_from_regular_asset(transactions, book, person, tax_rate, amount, income_limit)
+                meet_cash_req_from_NON_REGISTERED_asset(transactions, book, person, tax_rate, amount, income_limit)
             elif account == Account.RRIF:
                 meet_cash_req_from_deferred(transactions, book, person, Account.RRIF, tax_rate, amount, income_limit)
             elif account == Account.RRSP:
@@ -68,8 +68,8 @@ def get_projection(data, calculate_surplus_capital=True):
         target = needs / 2
 
 
-        liquidate_in_order(transactions, start_book, "client", client_age, tax_rate, 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
-        liquidate_in_order(transactions, start_book, "spouse", spouse_age, tax_rate, 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+        liquidate_in_order(transactions, start_book, "client", client_age, tax_rate, 0, target, [Account.NON_REGISTERED, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+        liquidate_in_order(transactions, start_book, "spouse", spouse_age, tax_rate, 0, target, [Account.NON_REGISTERED, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
         book = process_transactions(start_book, transactions)
 
@@ -79,7 +79,7 @@ def get_projection(data, calculate_surplus_capital=True):
         needs = 0 - book['joint'][Account.CLEARING]
         target = needs
 
-        liquidate_in_order(transactions, start_book, "client", client_age, tax_rate, 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+        liquidate_in_order(transactions, start_book, "client", client_age, tax_rate, 0, target, [Account.NON_REGISTERED, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
 
         book = process_transactions(start_book, transactions)
@@ -90,7 +90,7 @@ def get_projection(data, calculate_surplus_capital=True):
         needs = 0 - book['joint'][Account.CLEARING]
         target = needs
 
-        liquidate_in_order(transactions, start_book, "spouse", spouse_age, tax_rate, 0, target, [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+        liquidate_in_order(transactions, start_book, "spouse", spouse_age, tax_rate, 0, target, [Account.NON_REGISTERED, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
 
         return
@@ -109,7 +109,7 @@ def get_projection(data, calculate_surplus_capital=True):
 
 
         liquidate_in_order(transactions, start_book, "client", client_age, tax_rate, 0, target,
-                           [Account.REGULAR, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
+                           [Account.NON_REGISTERED, Account.TFSA, Account.RRIF, Account.RRSP, Account.LIF, Account.LIRA])
 
         return
 
@@ -179,16 +179,16 @@ def get_projection(data, calculate_surplus_capital=True):
 
 
         for person in persons:
-            if book[person][Account.REGULAR] > delta:
-                createTransaction(transactions, "debit", person, Account.REGULAR, delta, TransactionType.REMOVE_SURPLUS_CAPITAL)
-                createTransaction(transactions, "debit", person, Account.REGULAR_BOOK_VALUE, delta * book[person][Account.REGULAR_BOOK_VALUE] / book[person][Account.REGULAR],
+            if book[person][Account.NON_REGISTERED] > delta:
+                createTransaction(transactions, "debit", person, Account.NON_REGISTERED, delta, TransactionType.REMOVE_SURPLUS_CAPITAL)
+                createTransaction(transactions, "debit", person, Account.NON_REGISTERED_BOOK_VALUE, delta * book[person][Account.NON_REGISTERED_BOOK_VALUE] / book[person][Account.NON_REGISTERED],
                                   TransactionType.REMOVE_SURPLUS_CAPITAL)
                 delta = 0
 
-            elif book[person][Account.REGULAR] > 0:
-                createTransaction(transactions, "debit", person, Account.REGULAR, book[person][Account.REGULAR], TransactionType.REMOVE_SURPLUS_CAPITAL)
-                createTransaction(transactions, "debit", person, Account.REGULAR_BOOK_VALUE, book[person][Account.REGULAR_BOOK_VALUE], TransactionType.REMOVE_SURPLUS_CAPITAL)
-                delta -= book[person][Account.REGULAR]
+            elif book[person][Account.NON_REGISTERED] > 0:
+                createTransaction(transactions, "debit", person, Account.NON_REGISTERED, book[person][Account.NON_REGISTERED], TransactionType.REMOVE_SURPLUS_CAPITAL)
+                createTransaction(transactions, "debit", person, Account.NON_REGISTERED_BOOK_VALUE, book[person][Account.NON_REGISTERED_BOOK_VALUE], TransactionType.REMOVE_SURPLUS_CAPITAL)
+                delta -= book[person][Account.NON_REGISTERED]
 
             if delta == 0:
                 return transactions

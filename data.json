@@ -40,7 +40,7 @@
       ],
       "income_requirements":[
          {
-            "type":"CORE_NEEDS",
+            "type":"ANNUAL_RETIREMENT_EXPENSES",
             "start_year":2023,
             "end_year":2050,
             "amount":10000,
@@ -63,7 +63,7 @@
       },
       "client":{
          "NON_REGISTERED_ASSET":100000,
-         "REGULAR_BOOK_VALUE":0,
+         "NON_REGISTERED_BOOK_VALUE":0,
          "TFSA":20000,
          "RRSP":0,
          "RRIF":0,
@@ -73,7 +73,7 @@
       },
       "spouse":{
          "NON_REGISTERED_ASSET":0,
-         "REGULAR_BOOK_VALUE":0,
+         "NON_REGISTERED_BOOK_VALUE":0,
          "TFSA":20000,
          "RRSP":500000,
          "RRIF":0,

@@ -48,8 +48,8 @@ data = {
         "joint" : {Account.CLEARING: 0,
                    Account.HOME: 0},
         "client" : {
-            Account.REGULAR: 0,
-            Account.REGULAR_BOOK_VALUE: 0,
+            Account.NON_REGISTERED: 0,
+            Account.NON_REGISTERED_BOOK_VALUE: 0,
             Account.TFSA: 0,
             Account.RRSP: 0,
             Account.RRIF: 0,
@@ -58,8 +58,8 @@ data = {
         },
 
         "spouse": {
-            Account.REGULAR: 0,
-            Account.REGULAR_BOOK_VALUE: 0,
+            Account.NON_REGISTERED: 0,
+            Account.NON_REGISTERED_BOOK_VALUE: 0,
             Account.TFSA: 0,
             Account.RRSP: 0,
             Account.RRIF: 0,
@@ -90,8 +90,8 @@ app.layout = dhc.Div([
                     dhc.Td(dcc.Input(id='client_life_expectancy', type='number', placeholder='0', value='95')),
                     dhc.Td(dcc.Input(id='spouse_life_expectancy', type='number', placeholder='0', value='95'))]),
 
-            dhc.Tr([dhc.Td("Regular Asset: "), dhc.Td(dcc.Input(id='client_regular_account',type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_regular_account',type='number', placeholder='0', value='0'))]),
-            dhc.Tr([dhc.Td("Regular Asset Book Value: "), dhc.Td(dcc.Input(id='client_regular_account_bv', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_regular_account_bv', type='number', placeholder='0', value='0'))]),
+            dhc.Tr([dhc.Td("NON_REGISTERED Asset: "), dhc.Td(dcc.Input(id='client_NON_REGISTERED_account',type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_NON_REGISTERED_account',type='number', placeholder='0', value='0'))]),
+            dhc.Tr([dhc.Td("NON_REGISTERED Asset Book Value: "), dhc.Td(dcc.Input(id='client_NON_REGISTERED_account_bv', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_NON_REGISTERED_account_bv', type='number', placeholder='0', value='0'))]),
 
             dhc.Tr([dhc.Td("TFSA: "), dhc.Td(dcc.Input(id='client_tfsa_account', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_tfsa_account', type='number', placeholder='0', value='0'))]),
             dhc.Tr([dhc.Td("RRIF: "), dhc.Td(dcc.Input(id='client_rrif_account', type='number', placeholder='0', value='0')), dhc.Td(dcc.Input(id='spouse_rrif_account', type='number', placeholder='0', value='0'))]),
@@ -307,7 +307,7 @@ dhc.Table([
 
 
     ])
-spouse_fields = ["spouse_age", "spouse_life_expectancy", "spouse_regular_account", "spouse_regular_account_bv", "spouse_tfsa_account", "spouse_rrsp_account", "spouse_rrif_account", "spouse_lira_account", "spouse_lif_account",
+spouse_fields = ["spouse_age", "spouse_life_expectancy", "spouse_NON_REGISTERED_account", "spouse_NON_REGISTERED_account_bv", "spouse_tfsa_account", "spouse_rrsp_account", "spouse_rrif_account", "spouse_lira_account", "spouse_lif_account",
                  "spouse_income_amount", "spouse_income_start_year", "spouse_income_end_year", "spouse_income_index",
                                       'spouse_pli_amount',
                                       'spouse_pension_amount',
@@ -392,8 +392,8 @@ def update_joint(home_value, data):
 
 
 
-@app.callback(Output('client', 'data'), [Input('client_regular_account', 'value'),
-                                         Input('client_regular_account_bv', 'value'),
+@app.callback(Output('client', 'data'), [Input('client_NON_REGISTERED_account', 'value'),
+                                         Input('client_NON_REGISTERED_account_bv', 'value'),
                                          Input('client_tfsa_account', 'value'),
                                          Input('client_rrif_account', 'value'),
                                          Input('client_rrsp_account', 'value'),
@@ -404,8 +404,8 @@ def update_joint(home_value, data):
 
                                         state=[State('client', 'data')])
 def update_client_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lira, lif, data):
-    data[Account.REGULAR] = int(reg_account)
-    data[Account.REGULAR_BOOK_VALUE] = int(reg_account_bv)
+    data[Account.NON_REGISTERED] = int(reg_account)
+    data[Account.NON_REGISTERED_BOOK_VALUE] = int(reg_account_bv)
     data[Account.TFSA] = int(tfsa)
     data[Account.RRSP] = int(rrsp)
     data[Account.RRIF] = int(rrif)
@@ -418,8 +418,8 @@ def update_client_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lira, lif,
 
 
 
-@app.callback(Output('spouse', 'data'), [Input('spouse_regular_account', 'value'),
-                                         Input('spouse_regular_account_bv', 'value'),
+@app.callback(Output('spouse', 'data'), [Input('spouse_NON_REGISTERED_account', 'value'),
+                                         Input('spouse_NON_REGISTERED_account_bv', 'value'),
                                          Input('spouse_tfsa_account', 'value'),
                                          Input('spouse_rrif_account', 'value'),
                                          Input('spouse_rrsp_account', 'value'),
@@ -428,8 +428,8 @@ def update_client_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lira, lif,
                                          ],
                                         state=[State('spouse', 'data')])
 def update_spouse_book(reg_account, reg_account_bv, tfsa, rrif, rrsp, lira, lif, data):
-    data[Account.REGULAR] = int(reg_account)
-    data[Account.REGULAR_BOOK_VALUE] = int(reg_account_bv)
+    data[Account.NON_REGISTERED] = int(reg_account)
+    data[Account.NON_REGISTERED_BOOK_VALUE] = int(reg_account_bv)
     data[Account.TFSA] = int(tfsa)
     data[Account.RRIF] = int(rrif)
     data[Account.RRSP] = int(rrsp)
@@ -530,11 +530,11 @@ def update_end_balance(balance, growth_rate, income_rate, inflation_rate, income
 
 
     data["income_requirements"] = []
-    core_income = {"start_year": 2021, "end_year": data["end_year"], "amount":  int(income_requirements), "index_rate": data["inflation"], "type": "CORE_NEEDS"}
+    core_income = {"start_year": 2021, "end_year": data["end_year"], "amount":  int(income_requirements), "index_rate": data["inflation"], "type": "ANNUAL_RETIREMENT_EXPENSES"}
     data["income_requirements"].append(core_income)
     core_income = {"start_year": 2021, "end_year": data["end_year"], "amount": 0, "index_rate": data["inflation"], "type": "HEALTH_CARE_EXPENSES"}
     data["income_requirements"].append(core_income)
-    core_income = {"start_year": 2021, "end_year": data["end_year"], "amount": 0,  "index_rate": data["inflation"], "type": "DISCRETIONARY_SPENDING"}
+    core_income = {"start_year": 2021, "end_year": data["end_year"], "amount": 0,  "index_rate": data["inflation"], "type": "ONE_OFF_EXPENSES"}
     data["income_requirements"].append(core_income)
 
 

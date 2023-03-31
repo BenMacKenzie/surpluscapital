@@ -17,7 +17,7 @@
         "pensions": [{"person":  <"client", "spouse">, "name": <"OAS", "CPP", "OTHER_PENSION">, , "start_year": 2040, "end_year": 2050, "amount": 12000, "index_rate": 0.04}],
         "incomes": [{"person":  <"client", "spouse">,  "start_year": 2040, "end_year": 2050, "amount": 12000, "index_rate": 0.04}],
         "pli": ["pli": [{"person": <"client", "spouse">, "amount": 50000}],],
-        "income_requirements": [{"type": <"CORE_NEEDS","HEALTH_CARE_EXPENSES","DISCRETIONARY_SPENDING">, "start_year": 2023, "end_year": 2050, "amount": 10000, "index_rate": 0.05}],
+        "income_requirements": [{"type": <"ANNUAL_RETIREMENT_EXPENSES","HEALTH_CARE_EXPENSES","DISCRETIONARY_SPENDING">, "start_year": 2023, "end_year": 2050, "amount": 10000, "index_rate": 0.05}],
         "charitable_donations": [{"start_year": 2023, "end_year": 2050, "amount": 1000, "index_rate": 0.05}]
     },
     
@@ -28,7 +28,7 @@
         
         "client" : {
             "NON_REGISTERED_ASSET": 100000,
-            "REGULAR_BOOK_VALUE": 0,
+            "NON_REGISTERED_BOOK_VALUE": 0,
             "TFSA": 20000,
             "RRSP": 0,
             "RRIF": 0,
@@ -38,7 +38,7 @@
     
         "spouse": {
             "NON_REGISTERED_ASSET": 0,
-            "REGULAR_BOOK_VALUE": 0,
+            "NON_REGISTERED_BOOK_VALUE": 0,
             "TFSA": 20000,
             "RRSP": 500000,
             "RRIF": 0,
