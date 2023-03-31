@@ -41,10 +41,10 @@ def ld_to_dl(l):
 def create_reportx(essential_capital_projection, parameters):
     #get rid of pandas....Ordered_Dict = {k : Not_Ordered_Dict[k] for k in key_order} etc....
 
-    reporting_transactions  = [ "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "SALE_OF_HOME", "PERMANENT_LIFE_INSURANCE", "EARNED_INCOME", "OTHER_PENSION", "OAS", "CPP", "REGULAR_DIVIDEND", "REGISTERED_DIVIDEND", "REGULAR_ASSET_GROWTH", "REGISTERED_ASSET_GROWTH", "SALE_OF_REGULAR_ASSET",
+    reporting_transactions  = [ "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "SALE_OF_HOME", "PERMANENT_LIFE_INSURANCE", "EARNED_INCOME", "OTHER_PENSION", "OAS", "OAS_CLAWBACK", "CPP", "REGULAR_DIVIDEND", "REGISTERED_DIVIDEND", "REGULAR_ASSET_GROWTH", "REGISTERED_ASSET_GROWTH", "SALE_OF_REGULAR_ASSET",
                                "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TFSA_WITHDRAWAL", "LIF_WITHDRAWAL", "TAX"]
 
-    spouse_reporting_transactions = ["SPOUSE_EARNED_INCOME", "SPOUSE_OTHER_PENSION", "SPOUSE_OAS", "SPOUSE_CPP", "SPOUSE_REGULAR_DIVIDEND", "SPOUSE_REGISTERED_DIVIDEND", "SPOUSE_REGULAR_ASSET_GROWTH", "SPOUSE_REGISTERED_ASSET_GROWTH",
+    spouse_reporting_transactions = ["SPOUSE_EARNED_INCOME", "SPOUSE_OTHER_PENSION", "SPOUSE_OAS", "SPOUSE_OAS_CLAWBACK", "SPOUSE_CPP", "SPOUSE_REGULAR_DIVIDEND", "SPOUSE_REGISTERED_DIVIDEND", "SPOUSE_REGULAR_ASSET_GROWTH", "SPOUSE_REGISTERED_ASSET_GROWTH",
                                      "SPOUSE_SALE_OF_REGULAR_ASSET", "SPOUSE_RRSP_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL", "SPOUSE_LIF_WITHDRAWAL", "SPOUSE_TAX" ]
 
     if parameters["spouse"]:
@@ -60,16 +60,17 @@ def create_reportx(essential_capital_projection, parameters):
             if t.transaction_type == TransactionType.PENSION_INCOME:
                 t_type = t.desc
             else:
-                t_type =  t.transaction_type.value
+                t_type = t.transaction_type.value
 
             if t.person == "spouse":
                 t_type = "SPOUSE_" + t_type
 
             if t_type in reporting_transactions:
-                if t_type in [ "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "TAX", "SPOUSE_TAX"]  and t.entry_type == "debit":
+                #Why am I doing this?
+                if t_type in ["CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "TAX", "SPOUSE_TAX" "OAS_CLAWBACK", "SPOUSE_OAS_CLAWBACK"]  and t.entry_type == "debit":
                     df_t[t_type][i] += t.amount
 
-                elif  t.entry_type == "credit":
+                elif t.entry_type == "credit":
                         df_t[t_type][i] += t.amount
 
 
@@ -106,7 +107,10 @@ def create_reportx(essential_capital_projection, parameters):
 
     if parameters["spouse"]:
         ordered_columns = ["year","EARNED_INCOME", "SPOUSE_EARNED_INCOME", "OAS",
-                           "SPOUSE_OAS", "CPP", "SPOUSE_CPP",
+                           "OAS_CLAWBACK",
+                           "SPOUSE_OAS",
+                           "SPOUSE_OAS_CLAWBACK",
+                           "CPP", "SPOUSE_CPP",
                            "OTHER_PENSION","SPOUSE_OTHER_PENSION",
                            "REGULAR_DIVIDEND",  "SPOUSE_REGULAR_DIVIDEND",
                            "SALE_OF_REGULAR_ASSET","SPOUSE_SALE_OF_REGULAR_ASSET",
@@ -145,7 +149,7 @@ def create_reportx(essential_capital_projection, parameters):
 
         df_t["total_funds_in"] = funds_in
 
-        funds_out = sum_columns(df_t,[ "TAX", "SPOUSE_TAX",
+        funds_out = sum_columns(df_t,[ "TAX", "SPOUSE_TAX", "OAS_CLAWBACK", "SPOUSE_OAS_CLAWBACK",
                          "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST"])
 
         df_t["total_funds_out"] = funds_out
@@ -162,7 +166,7 @@ def create_reportx(essential_capital_projection, parameters):
 
 
     else:
-        ordered_columns = ["year", "EARNED_INCOME", "OAS", "CPP", "REGULAR_DIVIDEND", "OTHER_PENSION",
+        ordered_columns = ["year", "EARNED_INCOME", "OAS", "OAS_CLAWBACK", "CPP", "REGULAR_DIVIDEND", "OTHER_PENSION",
                            "SALE_OF_REGULAR_ASSET",
                            "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL",
                            "LIF_WITHDRAWAL", "TFSA_WITHDRAWAL",
@@ -194,7 +198,7 @@ def create_reportx(essential_capital_projection, parameters):
 
         df_t["total_funds_in"] = funds_in
 
-        funds_out = sum_columns(df_t, ["TAX",
+        funds_out = sum_columns(df_t, ["TAX", "OAS_CLAWBACK",
                          "CORE_NEEDS", "HEALTH_CARE_EXPENSES", "DISCRETIONARY_SPENDING", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST"])
 
         df_t["total_funds_out"] = funds_out

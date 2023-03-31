@@ -58,8 +58,6 @@ def get_projection(data, calculate_surplus_capital=True):
     #could use the state of book after processing base transactions and empty transactions.
     def sell_assets_to_meet_needs_strategy_1_w_spouse(transactions, tax_rate, start_book, year):
 
-        OAS_CLAWBACK = 78000
-
         client_age = get_age(parameters["client_age"], parameters["start_year"], year)
         spouse_age = get_age(parameters["spouse_age"], parameters["start_year"], year)
 
@@ -121,11 +119,6 @@ def get_projection(data, calculate_surplus_capital=True):
         tax_rate = get_tax_rates(parameters['province'])
         generate_base_transactions(transactions, start_book, parameters, tax_rate)
         book = process_transactions(start_book, transactions)
-
-        #tax_rate = parameters["tax_rate"]
-
-
-        ##FIX...get tax rate here:
 
         if book['joint'][Account.CLEARING] > 0:
             invest_funds(transactions, book, parameters)
@@ -351,20 +344,6 @@ def get_projection(data, calculate_surplus_capital=True):
     g["surplus"] = surplus
 
     report = create_reportx(surplus_capital_projection, parameters)
-
-    #i think report is the in write form for the javascript UI...but dash wants the data to be a list of dicts
-    # ie [{'year': "oas", '2021': 0.5, "2021": 300}, {'year': "cpp, '2021': 0.75}]
-    """dash_data = []
-    for i in range(len(report["data"][0])):
-        row= {}
-        for j in range(len(report["columns"])):
-            row[report["columns"][j]] = report["data"][j][i]
-        dash_data.append(row)
-
-
-    report["data"] = dash_data
-    """
-    #end dash conversion...
 
 
     return  g, report

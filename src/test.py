@@ -1,6 +1,6 @@
 from engine import get_projection
 import json
-from transactions import Account, TransactionType
+from test_utils import get_value
 
 data = {
     "parameters":
@@ -9,7 +9,7 @@ data = {
         "income_rate": 0.02,
         "inflation": 0.02,
         "interest_rate": 0.03,
-        "start_year": 2021,
+        "start_year": 2023,
         "client_age": 65,
         "client_life_expectancy": 95,
         "spouse": True,
@@ -18,17 +18,18 @@ data = {
         "end_year": 2044,
         "end_balance": 0,
         "province": "Ontario",
-        "pensions": [{"person": "client", "name": "OAS", "start_year": 2040, "end_year": 2050, "amount": 12000, "index_rate": 0.04}],
-        "incomes": [{"person": "spouse", "start_year": 2040, "end_year": 2050, "amount": 12000, "index_rate": 0.04}],
+        "pensions": [{"person": "client", "name": "OAS", "start_year": 2023, "end_year": 2053, "amount": 12000, "index_rate": 0.04},
+                     {"person": "spouse", "name": "OAS", "start_year": 2023, "end_year": 2053, "amount": 12000, "index_rate": 0.04}],
+        "incomes": [{"person": "spouse", "start_year": 2023, "end_year": 2050, "amount": 120000, "index_rate": 0.04}],
         "pli": [{"person": "client", "amount": 50000}],
-        "income_requirements": [{"type": "CORE_NEEDS", "start_year": 2023, "end_year": 2050, "amount": 10000, "index_rate": 0.05}],
+        "income_requirements": [{"type": "CORE_NEEDS", "start_year": 2023, "end_year": 2050, "amount": 60000, "index_rate": 0.05}],
         "charitable_donations": [{"start_year": 2023, "end_year": 2050, "amount": 1000, "index_rate": 0.05}]
         },
     "start_book":  {
         "joint" : {"CLEARING": 0,
                    "HOME": 0},
         "client" : {
-            "NON_REGISTERED_ASSET": 100000,
+            "NON_REGISTERED_ASSET": 1000000,
             "REGULAR_BOOK_VALUE": 0,
             "TFSA": 20000,
             "RRSP": 0,
@@ -54,3 +55,11 @@ g, report = get_projection(data)
 print(g)
 print(report)
 print(json.dumps(data))
+
+
+income =
+cb = get_value(report, 2023, 'SPOUSE_OAS_CLAWBACK')
+print(cb)
+
+
+
