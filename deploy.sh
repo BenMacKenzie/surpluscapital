@@ -12,9 +12,10 @@ create_function() {
   aws lambda create-function \
     --function-name "$function_name" \
     --runtime python3.8 \
-    --role YOUR_EXECUTION_ROLE_ARN \
-    --handler YOUR_HANDLER_NAME \
-    --code "S3Bucket=$s3_bucket,S3Key=$s3_key"
+    --role arn:aws:iam::921996396429:role/service-role/SurplusCapitalPythonLambda-role-nol8pz3j \
+    --handler lambda_function.lambda_handler \
+    --code "S3Bucket=$s3_bucket,S3Key=$s3_key" \
+    --timeout 300
 }
 
 deploy_function() {
