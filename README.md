@@ -49,4 +49,5 @@
 }
 ```
 
-To deploy, run `./deploy.sh`. To test, run `./test.sh`, which sends a POST request using the data in `data.json`.
+To deploy, run `./deploy.sh`. To test, run `./test.sh`, which sends a POST request using the data in `data.json`. This deploys to/invokes the test lambda; to deploy/invoke the prod lambda, add `--prod` 
+after those two commands.
