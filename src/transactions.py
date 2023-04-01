@@ -4,8 +4,10 @@ import copy
 import os
 import csv
 
-from tax import amount_of_deferred_asset_to_sell, amount_of_NON_REGISTERED_asset_to_sell,\
+from tax import amount_of_deferred_asset_to_sell, amount_of_non_registered_asset_to_sell,\
     _calculate_tax, calculate_marginal_tax, get_oas_clawback, get_taxable_income
+
+from utils import get_future_value
 
 dir = os.path.dirname(__file__)
 fn = os.path.join(dir, 'LIF_withdrawal_rates.csv')
@@ -64,8 +66,6 @@ class Transaction():
 
 
 
-def get_future_value(start_year, future_year, value, factor):
-    return round(value * (1 + factor) ** (future_year - start_year),0)
 
 
 def createTransaction(transactions, entry_type, person, account, amount, transaction_type, book_value=0, desc=""):
@@ -184,7 +184,7 @@ def get_mandatory_lif_withdrawals(transactions, book, age, person):
         createTransaction(transactions, "credit",person, Account.CLEARING, amount, TransactionType.LIF_WITHDRAWAL, desc="mandatory lif withdrawal")
 
 
-def sell_NON_REGISTERED_asset(transactions, person, book, amount, tax_rate):
+def sell_non_registered_asset(transactions, person, book, amount, tax_rate):
     income = get_taxable_income(transactions, person)
     total = book[person][Account.NON_REGISTERED]
     bookvalue =book[person][Account.NON_REGISTERED_BOOK_VALUE]
@@ -287,16 +287,16 @@ def process_charitable_donations(transactions, joint_plan, start_year, year, don
 
 
 
-def process_oas_clawback(transactions, spouse):
+def process_oas_clawback(transactions, parameters, current_year, spouse):
 
-    oas_clawback = get_oas_clawback(transactions, "client")
+    oas_clawback = get_oas_clawback(transactions, parameters, current_year, "client")
     if oas_clawback > 0:
         createTransaction(transactions, "debit", "client", Account.CLEARING, oas_clawback, TransactionType.OAS_CLAWBACK)
 
     if not spouse:
         return
 
-    oas_clawback = get_oas_clawback(transactions, "spouse")
+    oas_clawback = get_oas_clawback(transactions,parameters, current_year, "spouse")
     if oas_clawback > 0:
         createTransaction(transactions, "debit", "spouse", Account.CLEARING, oas_clawback, TransactionType.OAS_CLAWBACK)
 
@@ -309,9 +309,9 @@ def process_incomes(transactions, start_year, year, incomes):
             createTransaction(transactions, "credit", income["person"], Account.CLEARING, pension_amount, TransactionType.EARNED_INCOME)
 
 
-def calculate_tax(transactions, person, tax_rates):
+def calculate_tax(transactions, parameters, current_year, person, tax_rates):
     taxable_income=get_taxable_income(transactions, person)
-    tax = _calculate_tax(taxable_income, tax_rates)
+    tax = _calculate_tax(parameters, current_year, taxable_income, tax_rates)
     return tax
 
 
@@ -328,14 +328,8 @@ def generate_base_transactions(transactions, current_book, parameters, tax_rate)
         elif get_age(year, parameters['start_year'], parameters['spouse_age']) == (parameters["spouse_life_expectancy"] + 1):
             transfer_assets_after_spouse_death(transactions, current_book, "spouse", "client")
 
-
-
     process_income_requirements(transactions, parameters["start_year"], year, parameters["income_requirements"])
-
     process_interest_expense(transactions, current_book, parameters["interest_rate"])
-
-
-
     process_pensions(transactions, parameters["start_year"], year, parameters["pensions"])
     process_incomes(transactions, parameters["start_year"], year, parameters["incomes"])
 
@@ -351,7 +345,6 @@ def generate_base_transactions(transactions, current_book, parameters, tax_rate)
         createTransaction(transactions, "credit", "joint", Account.CLEARING, current_book["joint"][Account.HOME], TransactionType.SALE_OF_HOME)
         createTransaction(transactions, "debit", "joint", Account.HOME, current_book["joint"][Account.HOME], TransactionType.SALE_OF_HOME)
 
-
     for pli in parameters["pli"]:
         if pli["person"] == "client":
           if get_age(year, parameters['start_year'], parameters['client_age']) == parameters["client_life_expectancy"]:
@@ -362,11 +355,6 @@ def generate_base_transactions(transactions, current_book, parameters, tax_rate)
                 "spouse_life_expectancy"]:
                 createTransaction(transactions, "credit", "joint", Account.CLEARING, pli["amount"],
                                   TransactionType.PERMANENT_LIFE_INSURANCE)
-
-
-
-
-
     current_book = process_transactions(current_book, transactions)
 
     if current_book["joint"][Account.HOME] > 0:
@@ -396,47 +384,47 @@ def generate_base_transactions(transactions, current_book, parameters, tax_rate)
                                   TransactionType.REGISTERERD_DIVIDEND)
 
     process_charitable_donations(transactions, parameters["spouse"], parameters["start_year"], year, parameters["charitable_donations"])
-    process_oas_clawback(transactions, parameters["spouse"])
+    process_oas_clawback(transactions, parameters, year, parameters["spouse"])
 
-    client_tax = calculate_tax(transactions,  "client", tax_rate)
+    client_tax = calculate_tax(transactions,  parameters, year, "client", tax_rate)
     createTransaction(transactions, "debit", "client", Account.CLEARING, client_tax, TransactionType.TAX, desc="client tax before sale of assets")
-    spouse_tax = calculate_tax(transactions, "spouse", tax_rate)
+    spouse_tax = calculate_tax(transactions,  parameters, year,"spouse", tax_rate)
     createTransaction(transactions, "debit", "spouse", Account.CLEARING, spouse_tax, TransactionType.TAX, desc="spouse tax before sale of assets")
 
-def meet_cash_req_from_NON_REGISTERED_asset(transactions, book, person, tax_rate, needs, income_limit=0):
+def meet_cash_req_from_non_registered_asset(transactions, parameters, current_year, book, person, tax_rate, needs, income_limit=0):
 
-    taxable_income = get_taxable_income(transactions, person)
+    taxable_income = get_taxable_income(transactions, parameters, current_year, person)
     #needs = 0 - book['joint'][Account.CLEARING]
     if book[person][Account.NON_REGISTERED] <= 0:
         return
     book_value_ratio = (book[person][Account.NON_REGISTERED] - book[person][Account.NON_REGISTERED_BOOK_VALUE]) / book[person][Account.NON_REGISTERED]
 
-    NON_REGISTERED_asset_needed = amount_of_NON_REGISTERED_asset_to_sell(transactions, person, needs, book_value_ratio, taxable_income, tax_rate)
+    non_registered_asset_needed = amount_of_non_registered_asset_to_sell(transactions, parameters, current_year,person, needs, book_value_ratio, taxable_income, tax_rate)
 
     if income_limit > 0:
         if taxable_income >= income_limit:
             return #do nothing
-        if NON_REGISTERED_asset_needed * book_value_ratio + taxable_income > income_limit:
-            NON_REGISTERED_asset_needed = (income_limit - taxable_income) / book_value_ratio
+        if non_registered_asset_needed * book_value_ratio + taxable_income > income_limit:
+            non_registered_asset_needed = (income_limit - taxable_income) / book_value_ratio
 
 
-    if NON_REGISTERED_asset_needed <= book[person][Account.NON_REGISTERED]:
-        sell_NON_REGISTERED_asset(transactions, person, book, NON_REGISTERED_asset_needed, tax_rate)
+    if non_registered_asset_needed <= book[person][Account.NON_REGISTERED]:
+        sell_non_registered_asset(transactions, person, book, non_registered_asset_needed, tax_rate)
     else:
-        sell_NON_REGISTERED_asset(transactions, person, book, book[person][Account.NON_REGISTERED], tax_rate)
+        sell_non_registered_asset(transactions, person, book, book[person][Account.NON_REGISTERED], tax_rate)
 
-    process_oas_clawback(transactions, person)
+    process_oas_clawback(transactions,parameters, current_year, person)
 
 
 
-def meet_cash_req_from_deferred(transactions, book, person, account, tax_rate, needs, income_limit=0):
-    taxable_income = get_taxable_income(transactions, person)
+def meet_cash_req_from_deferred(transactions, parameters, current_year, book, person, account, tax_rate, needs, income_limit=0):
+    taxable_income = get_taxable_income(transactions, parameters, current_year, person)
     #needs = 0 - book['joint'][Account.CLEARING]
 
     if book[person][account] <= 0:
         return
 
-    deferred_asset_needed = amount_of_deferred_asset_to_sell(transactions, person, needs, taxable_income, tax_rate)
+    deferred_asset_needed = amount_of_deferred_asset_to_sell(transactions,parameters, current_year, person, needs, taxable_income, tax_rate)
 
     if income_limit > 0:
         if taxable_income > income_limit:
@@ -452,8 +440,8 @@ def meet_cash_req_from_deferred(transactions, book, person, account, tax_rate, n
 
     process_oas_clawback(transactions, person)
 
-def meet_cash_req_from_lif(transactions, book, person, age, tax_rate, needs, income_limit):
-    taxable_income = get_taxable_income(transactions, person)
+def meet_cash_req_from_lif(transactions,parameters, current_year, book, person, age, tax_rate, needs, income_limit):
+    taxable_income = get_taxable_income(transactions,parameters, current_year, person)
     #needs = 0 - book['joint'][Account.CLEARING]
 
     if book[person][Account.LIF] <= 0:
@@ -462,7 +450,7 @@ def meet_cash_req_from_lif(transactions, book, person, age, tax_rate, needs, inc
     rate = get_max_withdrawal_rate(age)
     max_lif_withdrawal = book[person][Account.LIF] * rate
 
-    deferred_asset_needed = amount_of_deferred_asset_to_sell(needs, taxable_income, tax_rate)
+    deferred_asset_needed = amount_of_deferred_asset_to_sell(parameters, current_year,needs, taxable_income, tax_rate)
 
     if income_limit > 0:
         if taxable_income > income_limit:
@@ -475,7 +463,7 @@ def meet_cash_req_from_lif(transactions, book, person, age, tax_rate, needs, inc
     else:
         sell_deferred(transactions, person, Account.LIF,  max_lif_withdrawal, tax_rate)
 
-    process_oas_clawback(transactions, person)
+    process_oas_clawback(transactions,parameters, current_year, person)
 
 
 def meet_cash_req_from_tfsa(transactions, book, person, needs, income_limit):

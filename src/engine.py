@@ -1,7 +1,7 @@
 
 from transactions import *
 import json
-from utils import create_reportx
+from report_utils import create_report
 from tax_utils import get_tax_rates
 
 
@@ -27,7 +27,7 @@ def get_projection(data, calculate_surplus_capital=True):
         for account in order:
             if account == Account.NON_REGISTERED:
                 #pass in needs and pass in an income limit?
-                meet_cash_req_from_NON_REGISTERED_asset(transactions, book, person, tax_rate, amount, income_limit)
+                meet_cash_req_from_non_registered_asset(transactions, book, person, tax_rate, amount, income_limit)
             elif account == Account.RRIF:
                 meet_cash_req_from_deferred(transactions, book, person, Account.RRIF, tax_rate, amount, income_limit)
             elif account == Account.RRSP:
@@ -303,7 +303,7 @@ def get_projection(data, calculate_surplus_capital=True):
             end_capital, sim = create_projection(book, surplus_cap_transactions)
 
 
-            #close enough
+
             if essential_capital == 0:
                 return sim, surplus_cap_transactions
 
@@ -317,10 +317,10 @@ def get_projection(data, calculate_surplus_capital=True):
 
             elif end_capital > desired_end_balance:
                 high = essential_capital
-                essential_capital = round((high + low) / 2,2)
+                essential_capital = round((high + low) / 2, 2)
             else:
                 low = essential_capital
-                essential_capital = round((high + low) / 2,2)
+                essential_capital = round((high + low) / 2, 2)
 
 
     essential_capital_projection, sc_transactions = find_essential_capital(start_book)
@@ -333,17 +333,17 @@ def get_projection(data, calculate_surplus_capital=True):
     l = len(essential_capital_projection) - 1
     year = [essential_capital_projection[i]["start"]["year"] for i in range(l)]
     year.append(essential_capital_projection[-1]["end"]["year"])
-    essential = [get_capital(essential_capital_projection[i]["start"]) for i in range(l)]
-    essential.append(get_capital(essential_capital_projection[-1]["end"]))
-    surplus = [get_capital(surplus_capital_projection[i]["start"])- get_capital(essential_capital_projection[i]["start"]) for i in range(l)]
-    surplus.append( get_capital(surplus_capital_projection[-1]["end"]) - get_capital(essential_capital_projection[-1]["end"]))
+    essential = [round(get_capital(essential_capital_projection[i]["start"])) for i in range(l)]
+    essential.append(round(get_capital(essential_capital_projection[-1]["end"])))
+    surplus = [round(get_capital(surplus_capital_projection[i]["start"])- get_capital(essential_capital_projection[i]["start"])) for i in range(l)]
+    surplus.append(round(get_capital(surplus_capital_projection[-1]["end"]) - get_capital(essential_capital_projection[-1]["end"])))
 
     g = {}
     g["year"] = year
     g["essential"] = essential
     g["surplus"] = surplus
 
-    report = create_reportx(surplus_capital_projection, parameters)
+    report = create_report(surplus_capital_projection, parameters)
 
 
     return  g, report

@@ -1,14 +1,13 @@
 from transaction_types import TransactionType
+from utils import get_future_value
 
 
 cap_gains_rate = 0.5
-personal_exemption = 12896
 old_age_exemption = 7000
 old_age_exemption_age = 65
-clawback_base = 72000
-oas = 10000
 
-#TODO is oas clawback based on taxable income?  only difference is charitable donations
+
+
 def get_taxable_income(transactions, person):
     taxable_income = 0
     taxable = [TransactionType.SALE_OF_NON_REGISTERED_ASSET, TransactionType.RRIF_WITHDRAWAL, TransactionType.RRSP_WITHDRAWAL,
@@ -51,11 +50,14 @@ def get_current_oas_clawback(transactions, person):
 
 
 
-def get_oas_clawback(transactions, person, delta=0):
+def get_oas_clawback(transactions, parameters, current_year, person, delta=0):
     oas = get_oas_amount(transactions, person)
     taxable_income = get_taxable_income(transactions, person)
     taxable_income += delta
     current_clawback = get_current_oas_clawback(transactions, person)
+
+    clawback_base = get_future_value(parameters["start_year"], current_year,
+                                     parameters["oas_clawback"]["base"], parameters["oas_clawback"]["index"])
 
     if oas == 0:
         return 0
@@ -69,9 +71,11 @@ def get_oas_clawback(transactions, person, delta=0):
 
     return 0
 
-def _calculate_tax(taxable_income, tax_rates):
+def _calculate_tax(parameters, current_year, taxable_income, tax_rates):
     base = 0
     tax = 0
+    personal_exemption = get_future_value(parameters["start_year"], current_year, parameters["personal_exemption"]["base"],
+                                          parameters["personal_exemption"]["index"])
     taxable_income -= personal_exemption
 
 
@@ -90,73 +94,25 @@ def _calculate_tax(taxable_income, tax_rates):
 
     return tax
 
-def calculate_marginal_tax(base_income, marginal_income, tax_rates):
-    base = _calculate_tax(base_income, tax_rates)
-    total = _calculate_tax(base_income + marginal_income, tax_rates)
+def calculate_marginal_tax(parameters, current_year, base_income, marginal_income, tax_rates):
+    base = _calculate_tax(parameters, current_year, base_income, tax_rates)
+    total = _calculate_tax(parameters, current_year, base_income + marginal_income, tax_rates)
     return total - base
 
 
 
-def amount_of_deferred_asset_to_sell_old(need, starting_income, tax_rates):
-    # tax rates: {"marginal": [(15,000.0.1), (30,000,0.4)], "top": 0.5}
-
-    amount = 0
-    for (level, rate) in tax_rates['marginal']:
-        if starting_income <= level:
-            if (need / (1 - rate)) < level - starting_income:
-                amount += need / (1 - rate)
-                return amount
-            else:
-                amount += (level - starting_income)
-                need -= (level - starting_income) * (1 - rate)
-                starting_income = level
-
-
-    #only top rate left
-    amount += need / (1 - tax_rates['top'])
-    return amount
-
-
-#might be better to just double marginal levels, double starting income and halve the tax rates
-def amount_of_NON_REGISTERED_asset_to_sell_old(need, book_value_ratio, starting_income, tax_rates):
-
-    #tax rates: {"marginal": [(15,000.0.1), (30,000,0.4)], "top": 0.5}
-    #book_value_ratio =  (value - book_value) / value
-    #0.5 is tax rate adjustment for cap gains
-
-    if book_value_ratio == 0:
-        return need
-
-    amount = 0
-    for (level, rate) in tax_rates['marginal']:
-        rate = rate * 0.5 * book_value_ratio
-        if starting_income <= level:
-            if  need / (1 - rate) < (level - starting_income)/(0.5 * book_value_ratio):
-                amount += need / (1 - rate)
-                return amount
-            else:
-                amount += (level - starting_income) / 0.5
-                need -= ((level - starting_income) / 0.5) * (1 - rate)
-                starting_income = level
-
-
-    #only top rate left
-    rate = tax_rates['top'] * 0.5 * book_value_ratio
-    amount += need / (1 - rate)
-    return amount
 
 
 
 
-
-def amount_of_NON_REGISTERED_asset_to_sell(transactions, person, need, book_value_ratio, starting_income, tax_rates):
+def amount_of_non_registered_asset_to_sell(transactions, parameters, current_year, person, need, book_value_ratio, starting_income, tax_rates):
     low = need
     high = need / (1 - tax_rates["top"])
     x = round((high + low) / 2, 1)
 
     while True:
-        tax = calculate_marginal_tax(starting_income, x * book_value_ratio * cap_gains_rate, tax_rates)
-        oas_clawback = get_oas_clawback(transactions, person, x * book_value_ratio * cap_gains_rate)
+        tax = calculate_marginal_tax(parameters, current_year, starting_income, x * book_value_ratio * cap_gains_rate, tax_rates)
+        oas_clawback = get_oas_clawback(transactions, parameters, current_year, person, x * book_value_ratio * cap_gains_rate)
         net_proceeds = x - tax - oas_clawback
         y = need - net_proceeds
 
@@ -170,14 +126,14 @@ def amount_of_NON_REGISTERED_asset_to_sell(transactions, person, need, book_valu
             x = round((high + low) / 2, 1)
     return x
 
-def amount_of_deferred_asset_to_sell(transactions, person, need, starting_income, tax_rates):
+def amount_of_deferred_asset_to_sell(parameters, current_year, transactions, person, need, starting_income, tax_rates):
     low = need
     high = need / (1 - tax_rates["top"])
     x = round((high + low) / 2, 1)
 
     while True:
-        tax = calculate_marginal_tax(starting_income, x,  tax_rates)
-        oas_clawback = get_oas_clawback(transactions, person, x)
+        tax = calculate_marginal_tax(parameters, current_year, starting_income, x,  tax_rates)
+        oas_clawback = get_oas_clawback(transactions, parameters, current_year, person, x)
         net_proceeds = x - tax - oas_clawback
         y = need - net_proceeds
         if abs(y) < 1:
