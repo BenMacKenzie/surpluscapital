@@ -37,7 +37,7 @@ deploy_function() {
 }
 
 if [[ $1 == "--prod" ]]; then
-  deploy_function "SurplusCapitalPythonLambdaProd" "prod"
+  deploy_function "SurplusCapitalPythonLambda" "prod"
 else
   deploy_function "SurplusCapitalPythonLambdaDev" "dev"
 fi
