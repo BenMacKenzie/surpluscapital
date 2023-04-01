@@ -39,7 +39,6 @@ def ld_to_dl(l):
 
 
 def create_report(essential_capital_projection, parameters):
-    #get rid of pandas....Ordered_Dict = {k : Not_Ordered_Dict[k] for k in key_order} etc....
 
     reporting_transactions  = [ "ANNUAL_RETIREMENT_EXPENSES", "HEALTH_CARE_EXPENSES", "ONE_OFF_EXPENSES", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "SALE_OF_HOME", "PERMANENT_LIFE_INSURANCE", "EARNED_INCOME", "OTHER_PENSION", "OAS", "OAS_CLAWBACK", "CPP", "NON_REGISTERED_DIVIDEND", "REGISTERED_DIVIDEND", "NON_REGISTERED_ASSET_GROWTH", "REGISTERED_ASSET_GROWTH", "SALE_OF_NON_REGISTERED_ASSET",
                                "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TFSA_WITHDRAWAL", "LIF_WITHDRAWAL", "TAX"]
@@ -66,12 +65,17 @@ def create_report(essential_capital_projection, parameters):
                 t_type = "SPOUSE_" + t_type
 
             if t_type in reporting_transactions:
-                #Why am I doing this?
-                if t_type in ["ANNUAL_RETIREMENT_EXPENSES", "HEALTH_CARE_EXPENSES", "ONE_OFF_EXPENSES", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "TAX", "SPOUSE_TAX" "OAS_CLAWBACK", "SPOUSE_OAS_CLAWBACK"]  and t.entry_type == "debit":
+                #Aggregating
+                #these transactions don't have a corresponding credit transaction,
+                if t_type in ["ANNUAL_RETIREMENT_EXPENSES", "HEALTH_CARE_EXPENSES", "ONE_OFF_EXPENSES", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "TAX", "SPOUSE_TAX", "OAS_CLAWBACK", "SPOUSE_OAS_CLAWBACK"]:
                     df_t[t_type][i] += t.amount
 
+                #for everything else, only worry about the credit transaction
                 elif t.entry_type == "credit":
                         df_t[t_type][i] += t.amount
+
+                else:
+                    print(t_type)
 
 
 #the projections are lists of dictinaries....need to convert to dictionary of lists
@@ -149,7 +153,7 @@ def create_report(essential_capital_projection, parameters):
 
         df_t["total_funds_in"] = funds_in
 
-        funds_out = sum_columns(df_t,[ "TAX", "SPOUSE_TAX", "OAS_CLAWBACK", "SPOUSE_OAS_CLAWBACK",
+        funds_out = sum_columns(df_t, ["TAX", "SPOUSE_TAX", "OAS_CLAWBACK", "SPOUSE_OAS_CLAWBACK",
                          "ANNUAL_RETIREMENT_EXPENSES", "HEALTH_CARE_EXPENSES", "ONE_OFF_EXPENSES", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST"])
 
         df_t["total_funds_out"] = funds_out
