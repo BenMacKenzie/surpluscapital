@@ -79,15 +79,21 @@ def create_report(essential_capital_projection, parameters):
             if t_type in reporting_transactions:
                 #Aggregating
                 #these transactions don't have a corresponding credit transaction,
-                if t_type in ["ANNUAL_RETIREMENT_EXPENSES", "HEALTH_CARE_EXPENSES", "ONE_OFF_EXPENSES", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "TAX", "SPOUSE_TAX", "OAS_CLAWBACK", "SPOUSE_OAS_CLAWBACK"]:
+                if t_type in ["ANNUAL_RETIREMENT_EXPENSES", "HEALTH_CARE_EXPENSES",
+                              "ONE_OFF_EXPENSES", "CHARITABLE_DONATIONS",
+                              "SPOUSE_ANNUAL_RETIREMENT_EXPENSES", "SPOUSE_HEALTH_CARE_EXPENSES",
+                              "SPOUSE_ONE_OFF_EXPENSES",
+                              "SPOUSE_CHARITABLE_DONATIONS",
+                              "OVERDRAFT_INTEREST", "TAX", "SPOUSE_TAX",
+                              "OAS_CLAWBACK", "SPOUSE_OAS_CLAWBACK"]:
                     df_t[t_type][i] += t.amount
 
                 #for everything else, only worry about the credit transaction
                 elif t.entry_type == "credit":
                         df_t[t_type][i] += t.amount
 
-                else:
-                    print(t_type)
+
+
 
 
 #the projections are lists of dictinaries....need to convert to dictionary of lists
