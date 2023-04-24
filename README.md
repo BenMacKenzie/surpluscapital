@@ -5,6 +5,14 @@
         "income_rate": 0.02,
         "inflation": 0.02,
         "interest_rate": 0.03,
+        "oas_clawback": {
+            "base": 72000,
+            "index": 0.02
+        },
+        "personal_exemption": {
+            "base": 12896,
+            "index": 0.02
+        },
         "start_year": 2021,
         "client_age": 65,
         "client_life_expectancy": 95,

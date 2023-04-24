@@ -24,8 +24,10 @@ data = {
                      {"person": "spouse", "name": "OAS", "start_year": 2023, "end_year": 2053, "amount": 12000, "index_rate": 0.04}],
         "incomes": [{"person": "spouse", "start_year": 2023, "end_year": 2050, "amount": 120000, "index_rate": 0.04}],
         "pli": [{"person": "client", "amount": 50000}],
-        "income_requirements": [{"type": "ANNUAL_RETIREMENT_EXPENSES", "start_year": 2023, "end_year": 2050, "amount": 60000, "index_rate": 0.05}],
-        "charitable_donations": [{"start_year": 2023, "end_year": 2050, "amount": 1000, "index_rate": 0.05}]
+        "income_requirements": [{"person": "client", "type": "ANNUAL_RETIREMENT_EXPENSES", "start_year": 2023,
+                                 "end_year": 2050, "amount": 60000, "index_rate": 0.05},
+                                ],
+        "charitable_donations": [{"person": "spouse", "start_year": 2023, "end_year": 2050, "amount": 1000, "index_rate": 0.05}]
         },
     "start_book":  {
         "joint" : {"CLEARING": 0,

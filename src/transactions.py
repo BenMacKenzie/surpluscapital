@@ -236,7 +236,7 @@ def process_income_requirements(transactions, start_year, year, income_requireme
     for income_requirement in income_requirements:
         if income_requirement["start_year"] <= year and income_requirement["end_year"] >= year:
             need = get_future_value(start_year, year, income_requirement["amount"], income_requirement["index_rate"])
-            createTransaction(transactions, "debit", "joint", Account.CLEARING, need, TransactionType(income_requirement["type"]))
+            createTransaction(transactions, "debit", income_requirement["person"], Account.CLEARING, need, TransactionType(income_requirement["type"]))
 
 
 def process_interest_expense(transactions, current_book, interest_rate):
@@ -247,6 +247,17 @@ def process_interest_expense(transactions, current_book, interest_rate):
 
 
 def process_charitable_donations(transactions, joint_plan, start_year, year, donations):
+
+    for donation in donations:
+        if donation["start_year"] <= year and donation["end_year"] >= year:
+            donation_amount= get_future_value(start_year, year, donation["amount"], donation["index_rate"])
+            createTransaction(transactions, "debit", donation["person"], Account.CLEARING, donation_amount,
+                              TransactionType.CHARITABLE_DONATIONS, desc="charitable donation")
+
+
+
+#this is how it originally worked.
+def process_charitable_donations_optimized(transactions, joint_plan, start_year, year, donations):
 
     donation_amount = 0
     for donation in donations:

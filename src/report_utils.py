@@ -40,11 +40,23 @@ def ld_to_dl(l):
 
 def create_report(essential_capital_projection, parameters):
 
-    reporting_transactions  = [ "ANNUAL_RETIREMENT_EXPENSES", "HEALTH_CARE_EXPENSES", "ONE_OFF_EXPENSES", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "SALE_OF_HOME", "PERMANENT_LIFE_INSURANCE", "EARNED_INCOME", "OTHER_PENSION", "OAS", "OAS_CLAWBACK", "CPP", "NON_REGISTERED_DIVIDEND", "REGISTERED_DIVIDEND", "NON_REGISTERED_ASSET_GROWTH", "REGISTERED_ASSET_GROWTH", "SALE_OF_NON_REGISTERED_ASSET",
-                               "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TFSA_WITHDRAWAL", "LIF_WITHDRAWAL", "TAX"]
+    reporting_transactions  = ["ANNUAL_RETIREMENT_EXPENSES", "HEALTH_CARE_EXPENSES", "ONE_OFF_EXPENSES",
+                                "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST", "SALE_OF_HOME",
+                               "PERMANENT_LIFE_INSURANCE",
+                                "EARNED_INCOME", "OTHER_PENSION", "OAS", "OAS_CLAWBACK", "CPP",
+                                "NON_REGISTERED_DIVIDEND", "REGISTERED_DIVIDEND", "NON_REGISTERED_ASSET_GROWTH",
+                                "REGISTERED_ASSET_GROWTH", "SALE_OF_NON_REGISTERED_ASSET",
+                                "RRSP_WITHDRAWAL", "RRIF_WITHDRAWAL", "TFSA_WITHDRAWAL", "LIF_WITHDRAWAL", "TAX"]
 
-    spouse_reporting_transactions = ["SPOUSE_EARNED_INCOME", "SPOUSE_OTHER_PENSION", "SPOUSE_OAS", "SPOUSE_OAS_CLAWBACK", "SPOUSE_CPP", "SPOUSE_NON_REGISTERED_DIVIDEND", "SPOUSE_REGISTERED_DIVIDEND", "SPOUSE_NON_REGISTERED_ASSET_GROWTH", "SPOUSE_REGISTERED_ASSET_GROWTH",
-                                     "SPOUSE_SALE_OF_NON_REGISTERED_ASSET", "SPOUSE_RRSP_WITHDRAWAL", "SPOUSE_RRIF_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL", "SPOUSE_LIF_WITHDRAWAL", "SPOUSE_TAX" ]
+    spouse_reporting_transactions = ["SPOUSE_ANNUAL_RETIREMENT_EXPENSES", "SPOUSE_HEALTH_CARE_EXPENSES", "SPOUSE_ONE_OFF_EXPENSES",
+                                     "SPOUSE_CHARITABLE_DONATIONS",
+                                     "SPOUSE_EARNED_INCOME", "SPOUSE_OTHER_PENSION", "SPOUSE_OAS",
+                                     "SPOUSE_OAS_CLAWBACK", "SPOUSE_CPP", "SPOUSE_NON_REGISTERED_DIVIDEND",
+                                     "SPOUSE_REGISTERED_DIVIDEND", "SPOUSE_NON_REGISTERED_ASSET_GROWTH",
+                                     "SPOUSE_REGISTERED_ASSET_GROWTH",
+                                     "SPOUSE_SALE_OF_NON_REGISTERED_ASSET", "SPOUSE_RRSP_WITHDRAWAL",
+                                     "SPOUSE_RRIF_WITHDRAWAL", "SPOUSE_TFSA_WITHDRAWAL", "SPOUSE_LIF_WITHDRAWAL",
+                                     "SPOUSE_TAX" ]
 
     if parameters["spouse"]:
         reporting_transactions += spouse_reporting_transactions
@@ -85,6 +97,8 @@ def create_report(essential_capital_projection, parameters):
         client_proj[i]["year"] = essential_capital_projection[i]["start"]["year"]
 
     client_proj = ld_to_dl(client_proj)
+
+    #spouse does not appear in name in the projection so need to convert it here.
     _spouse_proj = [record['start']['spouse'] for record in essential_capital_projection[:-1]]
     _spouse_proj.append(essential_capital_projection[-1]['end']['spouse'])
     _spouse_proj = ld_to_dl(_spouse_proj)
@@ -127,6 +141,9 @@ def create_report(essential_capital_projection, parameters):
                            "TAX", "SPOUSE_TAX",
                            "ANNUAL_RETIREMENT_EXPENSES", "HEALTH_CARE_EXPENSES", "ONE_OFF_EXPENSES",
                            "CHARITABLE_DONATIONS",
+                           "SPOUSE_ANNUAL_RETIREMENT_EXPENSES", "SPOUSE_HEALTH_CARE_EXPENSES",
+                           "SPOUSE_ONE_OFF_EXPENSES",
+                           "SPOUSE_CHARITABLE_DONATIONS",
                            "OVERDRAFT_INTEREST",
                            "total_funds_out",
                            "net_funds_in",
@@ -154,7 +171,9 @@ def create_report(essential_capital_projection, parameters):
         df_t["total_funds_in"] = funds_in
 
         funds_out = sum_columns(df_t, ["TAX", "SPOUSE_TAX", "OAS_CLAWBACK", "SPOUSE_OAS_CLAWBACK",
-                         "ANNUAL_RETIREMENT_EXPENSES", "HEALTH_CARE_EXPENSES", "ONE_OFF_EXPENSES", "CHARITABLE_DONATIONS", "OVERDRAFT_INTEREST"])
+                         "ANNUAL_RETIREMENT_EXPENSES", "HEALTH_CARE_EXPENSES", "ONE_OFF_EXPENSES",
+                                       "CHARITABLE_DONATIONS", "SPOUSE_ANNUAL_RETIREMENT_EXPENSES", "SPOUSE_HEALTH_CARE_EXPENSES", "SPOUSE_ONE_OFF_EXPENSES",
+                                     "SPOUSE_CHARITABLE_DONATIONS","OVERDRAFT_INTEREST"])
 
         df_t["total_funds_out"] = funds_out
 
