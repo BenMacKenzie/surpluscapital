@@ -184,7 +184,7 @@ def get_mandatory_lif_withdrawals(transactions, book, age, person):
         createTransaction(transactions, "credit",person, Account.CLEARING, amount, TransactionType.LIF_WITHDRAWAL, desc="mandatory lif withdrawal")
 
 
-def sell_non_registered_asset(transactions, person, book, amount, tax_rate):
+def sell_non_registered_asset(parameters, transactions, person, book, amount, tax_rate):
     income = get_taxable_income(transactions, person)
     total = book[person][Account.NON_REGISTERED]
     bookvalue =book[person][Account.NON_REGISTERED_BOOK_VALUE]
@@ -193,12 +193,14 @@ def sell_non_registered_asset(transactions, person, book, amount, tax_rate):
     createTransaction(transactions,"credit", person, Account.CLEARING, amount, TransactionType.SALE_OF_NON_REGISTERED_ASSET)
 
     realized_cap_gain = (amount * (total - bookvalue) / total) * 0.5
-    tax = calculate_marginal_tax(income, realized_cap_gain, tax_rate)
-    createTransaction(transactions,"debit", person, Account.CLEARING, tax, TransactionType.TAX, desc="tax on sale of asset")
+
+    tax = calculate_marginal_tax(parameters, book['year'], income, realized_cap_gain, tax_rate)
+    createTransaction(transactions, "debit", person, Account.CLEARING, tax, TransactionType.TAX, desc="tax on sale of asset")
 
 
 
-def sell_deferred(transactions, person,  account, amount, tax_rate):
+
+def sell_deferred(parameters, transactions, person, book, account, amount, tax_rate):
     income = get_taxable_income(transactions, person)
     if account == Account.RRSP:
         transaction=TransactionType.RRSP_WITHDRAWAL
@@ -214,7 +216,7 @@ def sell_deferred(transactions, person,  account, amount, tax_rate):
 
     createTransaction(transactions, "debit", person, account, amount, transaction)
     createTransaction(transactions, "credit", person, Account.CLEARING, amount, transaction)
-    tax = calculate_marginal_tax(income, amount, tax_rate)
+    tax = calculate_marginal_tax(parameters, book['year'], income, amount, tax_rate)
     createTransaction(transactions, "debit", person, Account.CLEARING, tax, TransactionType.TAX, desc=desc)
 
 
@@ -299,17 +301,17 @@ def process_charitable_donations_optimized(transactions, joint_plan, start_year,
 
 
 def process_oas_clawback(transactions, parameters, current_year, spouse):
-
+    taxable_income = get_taxable_income(transactions, "client")
     oas_clawback = get_oas_clawback(transactions, parameters, current_year, "client")
     if oas_clawback > 0:
-        createTransaction(transactions, "debit", "client", Account.CLEARING, oas_clawback, TransactionType.OAS_CLAWBACK)
+        createTransaction(transactions, "debit", "client", Account.CLEARING, oas_clawback, TransactionType.OAS_CLAWBACK, f"income={taxable_income}")
 
     if not spouse:
         return
-
+    taxable_income = get_taxable_income(transactions, "spouse")
     oas_clawback = get_oas_clawback(transactions,parameters, current_year, "spouse")
     if oas_clawback > 0:
-        createTransaction(transactions, "debit", "spouse", Account.CLEARING, oas_clawback, TransactionType.OAS_CLAWBACK)
+        createTransaction(transactions, "debit", "spouse", Account.CLEARING, oas_clawback, TransactionType.OAS_CLAWBACK,f"income={taxable_income}")
 
 
 def process_incomes(transactions, start_year, year, incomes):
@@ -404,7 +406,7 @@ def generate_base_transactions(transactions, current_book, parameters, tax_rate)
 
 def meet_cash_req_from_non_registered_asset(transactions, parameters, current_year, book, person, tax_rate, needs, income_limit=0):
 
-    taxable_income = get_taxable_income(transactions, parameters, current_year, person)
+    taxable_income = get_taxable_income(transactions, person)
     #needs = 0 - book['joint'][Account.CLEARING]
     if book[person][Account.NON_REGISTERED] <= 0:
         return
@@ -420,22 +422,22 @@ def meet_cash_req_from_non_registered_asset(transactions, parameters, current_ye
 
 
     if non_registered_asset_needed <= book[person][Account.NON_REGISTERED]:
-        sell_non_registered_asset(transactions, person, book, non_registered_asset_needed, tax_rate)
+        sell_non_registered_asset(parameters, transactions, person, book, non_registered_asset_needed, tax_rate)
     else:
-        sell_non_registered_asset(transactions, person, book, book[person][Account.NON_REGISTERED], tax_rate)
+        sell_non_registered_asset(parameters, transactions, person, book, book[person][Account.NON_REGISTERED], tax_rate)
 
-    process_oas_clawback(transactions,parameters, current_year, person)
+    process_oas_clawback(transactions, parameters, current_year, person)
 
 
 
 def meet_cash_req_from_deferred(transactions, parameters, current_year, book, person, account, tax_rate, needs, income_limit=0):
-    taxable_income = get_taxable_income(transactions, parameters, current_year, person)
+    taxable_income = get_taxable_income(transactions,person)
     #needs = 0 - book['joint'][Account.CLEARING]
 
     if book[person][account] <= 0:
         return
 
-    deferred_asset_needed = amount_of_deferred_asset_to_sell(transactions,parameters, current_year, person, needs, taxable_income, tax_rate)
+    deferred_asset_needed = amount_of_deferred_asset_to_sell(parameters, current_year, transactions, person, needs, taxable_income, tax_rate)
 
     if income_limit > 0:
         if taxable_income > income_limit:
@@ -443,16 +445,18 @@ def meet_cash_req_from_deferred(transactions, parameters, current_year, book, pe
         if deferred_asset_needed + taxable_income > income_limit:
             deferred_asset_needed = income_limit - taxable_income
 
-
+    if deferred_asset_needed is None:
+        print('what?')
     if deferred_asset_needed <= book[person][account]:
-        sell_deferred(transactions, person, account, deferred_asset_needed, tax_rate)
+
+        sell_deferred(parameters, transactions, person, book, account, deferred_asset_needed, tax_rate)
     else:
-        sell_deferred(transactions, person, account,  book[person][account], tax_rate)
+        sell_deferred(parameters, transactions, person,book, account,  book[person][account], tax_rate)
 
-    process_oas_clawback(transactions, person)
+    process_oas_clawback(transactions, parameters, book['year'], person)
 
-def meet_cash_req_from_lif(transactions,parameters, current_year, book, person, age, tax_rate, needs, income_limit):
-    taxable_income = get_taxable_income(transactions,parameters, current_year, person)
+def meet_cash_req_from_lif(transactions, parameters, current_year, book, person, age, tax_rate, needs, income_limit):
+    taxable_income = get_taxable_income(transactions, person)
     #needs = 0 - book['joint'][Account.CLEARING]
 
     if book[person][Account.LIF] <= 0:
@@ -460,8 +464,7 @@ def meet_cash_req_from_lif(transactions,parameters, current_year, book, person, 
 
     rate = get_max_withdrawal_rate(age)
     max_lif_withdrawal = book[person][Account.LIF] * rate
-
-    deferred_asset_needed = amount_of_deferred_asset_to_sell(parameters, current_year,needs, taxable_income, tax_rate)
+    deferred_asset_needed = amount_of_deferred_asset_to_sell(parameters, current_year, transactions, person, needs, taxable_income, tax_rate)
 
     if income_limit > 0:
         if taxable_income > income_limit:
@@ -470,9 +473,10 @@ def meet_cash_req_from_lif(transactions,parameters, current_year, book, person, 
             deferred_asset_needed = income_limit - taxable_income
 
     if deferred_asset_needed <= max_lif_withdrawal:
-        sell_deferred(transactions, person, Account.LIF, deferred_asset_needed, tax_rate)
+
+        sell_deferred(parameters, transactions, person, book, Account.LIF, deferred_asset_needed, tax_rate)
     else:
-        sell_deferred(transactions, person, Account.LIF,  max_lif_withdrawal, tax_rate)
+        sell_deferred(parameters, transactions, person, book, Account.LIF,  max_lif_withdrawal, tax_rate)
 
     process_oas_clawback(transactions,parameters, current_year, person)
 

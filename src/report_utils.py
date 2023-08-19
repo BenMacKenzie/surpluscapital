@@ -109,7 +109,7 @@ def create_report(essential_capital_projection, parameters):
     _spouse_proj.append(essential_capital_projection[-1]['end']['spouse'])
     _spouse_proj = ld_to_dl(_spouse_proj)
     spouse_columns = ["SPOUSE_NON_REGISTERED_ASSET", "SPOUSE_NON_REGISTERED_BOOK_VALUE",
-                      "SPOUSE_RRSP", "SPOUSE_RRIF", "SPOUSE_TFSA", "SPOUSE_LIRA", "SPOUSE_LIF", "spouse_year"]
+                      "SPOUSE_TFSA", "SPOUSE_RRSP", "SPOUSE_RRIF",   "SPOUSE_LIF", "SPOUSE_LIRA", "spouse_year"]
 
     spouse_proj = dict(zip(spouse_columns, list(_spouse_proj.values())))
 

@@ -2,17 +2,14 @@ def get_value(report, year, column):
 
     year_index = -1
     column_index = -1
-    for c in report['columns'][1:]:
-        year_index += 1
-        if year == c:
-            break
+    if year in report['columns'][1:]:
+        year_index = report['columns'][1:].index(year)
+    else:
+        return None
 
-    for c in report['data'][0]:
-        column_index += 1
-        if column == c:
-            break
-
-    if year_index == -1 or column_index == -1:
+    if column in report['data'][0]:
+        column_index = report['data'][0].index(column)
+    else:
         return None
 
     return report['data'][year_index+1][column_index]

@@ -27,20 +27,22 @@ def get_projection(data, calculate_surplus_capital=True):
         for account in order:
             if account == Account.NON_REGISTERED:
                 #pass in needs and pass in an income limit?
-                meet_cash_req_from_non_registered_asset(transactions, book, person, tax_rate, amount, income_limit)
+                meet_cash_req_from_non_registered_asset(transactions, parameters, book['year'], book, person, tax_rate, amount, income_limit)
             elif account == Account.RRIF:
-                meet_cash_req_from_deferred(transactions, book, person, Account.RRIF, tax_rate, amount, income_limit)
+                meet_cash_req_from_deferred(transactions, parameters, book['year'],book, person, Account.RRIF, tax_rate, amount, income_limit)
             elif account == Account.RRSP:
-                meet_cash_req_from_deferred(transactions, book, person, Account.RRSP, tax_rate,amount, income_limit)
+                meet_cash_req_from_deferred(transactions, parameters, book['year'], book, person, Account.RRIF,
+                                            tax_rate, amount, income_limit)
 
             elif account == Account.LIF:
-                meet_cash_req_from_lif(transactions, book, person, age, tax_rate, amount, income_limit)
+                meet_cash_req_from_lif(transactions, parameters, book['year'], book, person, age, tax_rate, amount, income_limit)
 
             elif account == Account.LIRA:
                 if age >= 50 and book[person][Account.LIRA] > 0:
                     convert_lira_to_lif(transactions, book, person)
                     book = process_transactions(start_book, transactions)
-                    meet_cash_req_from_lif(transactions, book, person, age, tax_rate, amount, income_limit)
+                    meet_cash_req_from_lif(transactions, parameters, book['year'], book, person, age, tax_rate, amount,
+                                           income_limit)
 
             elif account == Account.TFSA:
                 meet_cash_req_from_tfsa(transactions, book, person, amount, income_limit)

@@ -1,10 +1,7 @@
-from  engine import get_projection
-import json
-from test_utils import get_value
+from transactions import Account, Transaction, TransactionType
+from tax import amount_of_non_registered_asset_to_sell
 
-data = {
-    "parameters":
-        {
+parameters = {
         "growth_rate": 0.05,
         "income_rate": 0.02,
         "inflation": 0.02,
@@ -28,49 +25,16 @@ data = {
                                  "end_year": 2050, "amount": 60000, "index_rate": 0.05},
                                 ],
         "charitable_donations": [{"person": "spouse", "start_year": 2023, "end_year": 2050, "amount": 1000, "index_rate": 0.05}]
-        },
-    "start_book":  {
-        "joint" : {"CLEARING": 0,
-                   "HOME": 0},
-        "client" : {
-            "NON_REGISTERED_ASSET": 1000000,
-            "NON_REGISTERED_BOOK_VALUE": 0,
-            "TFSA": 20000,
-            "RRSP": 0,
-            "RRIF": 0,
-            "LIF": 0,
-            "LIRA": 0
-        },
-
-        "spouse": {
-            "NON_REGISTERED_ASSET": 0,
-            "NON_REGISTERED_BOOK_VALUE": 0,
-            "TFSA": 20000,
-            "RRSP": 500000,
-            "RRIF": 0,
-            "LIF": 5000,
-            "LIRA": 0
         }
-    }
-
-}
-
-g, report = get_projection(data)
-print(g)
-print(report)
-print(json.dumps(data))
 
 
+oas = Transaction('credit', 'spouse', Account.CLEARING, 13498, TransactionType.PENSION_INCOME, 0, 'OAS')
+clawback = Transaction('debit', 'spouse', Account.CLEARING, 1184.7, TransactionType.OAS_CLAWBACK)
+transactions = [oas, clawback]
+tax_rates = {'marginal': [[46226.0, 0.20049999999999998], [50197.0, 0.2415], [92454.0, 0.2965], [100392, 0.3166], [150000.0, 0.37160000000000004], [155625.0, 0.3816], [220000.0, 0.41159999999999997]], 'top': 0.4216}
 
-cb = get_value(report, 2023, 'SPOUSE_OAS_CLAWBACK')
-print(cb)
-cb = get_value(report, 2030, 'SPOUSE_OAS')
-print(cb)
-cb = get_value(report, 2030, 'SPOUSE_EARNED_INCOME')
-print(cb)
+x = amount_of_non_registered_asset_to_sell(transactions, parameters, 2026, 'spouse', 18.244975000000522, 0.10667697915907356, 78713.3, tax_rates)
 
-spouse_lira = get_value(report, 2023, 'SPOUSE_TFSA')
-print(f"spouse RRSP {spouse_lira}")
-client_non_reg = get_value(report, 2024, 'NON_REGISTERED_ASSET')
-print(f"client non reg  {client_non_reg}")
+print(x)
+
 
