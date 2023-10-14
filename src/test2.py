@@ -19,6 +19,7 @@ data = {
         "spouse_life_expectancy": 100,
         "end_year": 2068,
         "end_balance": 200000,
+        "sell_home": 2039,
         "province": "Ontario",
         "pensions": [{"person": "client", "name": "CPP", "start_year": 2023, "end_year": 2068, "amount": 2000, "index_rate": 0.02},
                      {"person": "client", "name": "OAS", "start_year": 2024, "end_year": 2068, "amount": 3000, "index_rate": 0.02},
@@ -50,8 +51,7 @@ data = {
         },
     "start_book":  {
         "joint" : {"CLEARING": 0,
-                   "HOME": 1000000,
-                   "sell_home": 20059},
+                   "HOME": 1000000},
         "client" : {
             "NON_REGISTERED_ASSET": 40000,
             "NON_REGISTERED_BOOK_VALUE": 10000,
@@ -107,3 +107,5 @@ print(f"SPOUSE_LIF {a}")
 a = get_value(report, 2023, 'SPOUSE_NON_REGISTERED_ASSET')
 print(f"SPOUSE_NON_REGISTERED_ASSET  {a}")
 
+a = get_value(report, 2040, 'HOME')
+print(f"HOME  {a}")

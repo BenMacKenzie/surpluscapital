@@ -111,7 +111,17 @@ def create_report(essential_capital_projection, parameters):
     spouse_columns = ["SPOUSE_NON_REGISTERED_ASSET", "SPOUSE_NON_REGISTERED_BOOK_VALUE",
                       "SPOUSE_TFSA", "SPOUSE_RRSP", "SPOUSE_RRIF",   "SPOUSE_LIF", "SPOUSE_LIRA", "spouse_year"]
 
-    spouse_proj = dict(zip(spouse_columns, list(_spouse_proj.values())))
+    #spouse_proj = dict(zip(spouse_columns, list(_spouse_proj.values())))
+    spouse_proj = {}
+    spouse_proj["SPOUSE_NON_REGISTERED_ASSET"] = _spouse_proj.pop("NON_REGISTERED_ASSET")
+    spouse_proj["SPOUSE_NON_REGISTERED_BOOK_VALUE"] = _spouse_proj.pop("NON_REGISTERED_BOOK_VALUE")
+    spouse_proj["SPOUSE_TFSA"] = _spouse_proj.pop("TFSA")
+    spouse_proj["SPOUSE_RRSP"] = _spouse_proj.pop("RRSP")
+    spouse_proj["SPOUSE_RRIF"] = _spouse_proj.pop("RRIF")
+    spouse_proj["SPOUSE_LIF"] = _spouse_proj.pop("LIF")
+    spouse_proj["SPOUSE_LIRA"] = _spouse_proj.pop("LIRA")
+
+
 
     joint_proj = [record['start']['joint'] for record in essential_capital_projection[:-1]]
     joint_proj.append(essential_capital_projection[-1]['end']['joint'])
