@@ -5,8 +5,8 @@ from test_utils import get_value
 data = {
     "parameters":
         {
-        "growth_rate": 0.04,
-        "income_rate": 0.03,
+        "growth_rate": 0.015,
+        "income_rate": 0.015,
         "inflation": 0.02,
         "interest_rate": 0,
         "oas_clawback" : {"base": 72000, "index": 0.02},
@@ -16,43 +16,41 @@ data = {
         "client_life_expectancy": 100,
         "spouse": True,
         "spouse_age": 65,
-        "spouse_life_expectancy": 100,
+        "spouse_life_expectancy": 95,
         "end_year": 2068,
-        "end_balance": 200000,
-        "sell_home": 2039,
+        "end_balance": 50000,
+        "sell_home": 2050,
         "province": "Ontario",
-        "pensions": [{"person": "client", "name": "CPP", "start_year": 2023, "end_year": 2068, "amount": 2000, "index_rate": 0.02},
-                     {"person": "client", "name": "OAS", "start_year": 2024, "end_year": 2068, "amount": 3000, "index_rate": 0.02},
-                     {"person": "client", "name": "OTHER", "start_year": 2023, "end_year": 2068, "amount": 4000,
+        "pensions": [{"person": "client", "name": "CPP", "start_year": 2033, "end_year": 2068, "amount": 1250, "index_rate": 0.02},
+                     {"person": "client", "name": "OAS", "start_year": 2024, "end_year": 2068, "amount": 1500, "index_rate": 0.02},
+                     {"person": "client", "name": "OTHER", "start_year": 2025, "end_year": 2068, "amount": 1500,
                       "index_rate": 0.0},
 
-                     {"person": "spouse", "name": "CPP", "start_year": 2023, "end_year": 2058, "amount": 2000,
+                     {"person": "spouse", "name": "CPP", "start_year": 2023, "end_year": 2053, "amount": 1250,
                       "index_rate": 0.02},
-                     {"person": "spouse", "name": "OAS", "start_year": 2023, "end_year": 2058, "amount": 3000,
+                     {"person": "spouse", "name": "OAS", "start_year": 2023, "end_year": 2053, "amount": 1500,
                       "index_rate": 0.02},
-                     {"person": "spouse", "name": "OTHER", "start_year": 2023, "end_year": 2058, "amount": 4000,
-                      "index_rate": 0.02}
+                     {"person": "spouse", "name": "OTHER", "start_year": 2023, "end_year": 2053, "amount": 1500,
+                      "index_rate": 0.00}
                      ],
-        "incomes": [{"person": "client", "start_year": 2025, "end_year": 2026, "amount": 200, "index_rate": 0.02},
-                    {"person": "spouse", "start_year": 2030, "end_year": 2031, "amount": 50000, "index_rate": 0.02},
-                    {"person": "client", "start_year": 2027, "end_year": 2028, "amount": 5252, "index_rate": 0.02},
-                    {"person": "client", "start_year": 2029, "end_year": 2029, "amount": 4656, "index_rate": 0.02},
-                    {"person": "spouse", "start_year": 2032, "end_year": 2033, "amount": 63546, "index_rate": 0.02},
+        "incomes": [{"person": "client", "start_year": 2023, "end_year": 2023, "amount": 10000, "index_rate": 0.02},
+                    {"person": "spouse", "start_year": 2025, "end_year": 2025, "amount": 30000, "index_rate": 0.02},
+                    {"person": "client", "start_year": 2024, "end_year": 2024, "amount": 20000, "index_rate": 0.02},
+                    {"person": "spouse", "start_year": 2025, "end_year": 2025, "amount": 40000, "index_rate": 0.02}
                    ],
-        "pli": [{"person": "client", "amount": 100000},
-                {"person": "spouse", "amount": 200000}],
-        "income_requirements":
-            [{"person": "client", "type": "ANNUAL_RETIREMENT_EXPENSES", "start_year": 2023,
-                                 "end_year": 2043, "amount": 30000, "index_rate": 0.02},
+        "pli": [{"person": "client", "amount": 400000},
+                {"person": "spouse", "amount": 300000}],
+        "income_requirements": [{"person": "client", "type": "ANNUAL_RETIREMENT_EXPENSES", "start_year": 2023,
+                                 "end_year": 2068, "amount": 27000, "index_rate": 0.02},
                                 {"person": "spouse", "type": "HEALTH_CARE_EXPENSES", "start_year": 2023,
-                                 "end_year": 2043, "amount": 6000, "index_rate": 0.02}
-
-                                ],
-        "charitable_donations": [{"person": "spouse", "start_year": 2023, "end_year": 2050, "amount": 1000, "index_rate": 0.05}]
+                                 "end_year": 2068, "amount": 22000, "index_rate": 0.02}],
+        "ONE_OFF_EXPENSES":[{"start_year": 2023, "end_year": 2024, "amount": 5000, "index_rate": 0.02}],
+        "charitable_donations": [{"person": "spouse", "start_year": 2030, "end_year": 2031, "amount": 1250, "index_rate": 0.02}]
         },
     "start_book":  {
         "joint" : {"CLEARING": 0,
-                   "HOME": 1000000},
+                   "HOME": 800000
+                   },
         "client" : {
             "NON_REGISTERED_ASSET": 40000,
             "NON_REGISTERED_BOOK_VALUE": 10000,
@@ -73,8 +71,8 @@ data = {
             "LIRA": 4000
         }
     }
-
 }
+
 
 g, report = get_projection(data)
 print(g)
